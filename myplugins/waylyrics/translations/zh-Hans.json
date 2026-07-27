@@ -1,0 +1,102 @@
+{
+  "cue_text": "···",
+  "no_lyrics": "暂无歌词",
+  "instrumental": "纯音乐",
+  "intro": "前奏",
+  "source_label": "歌词来源",
+
+  "shortcut.media.label": "打开媒体面板",
+  "shortcut.selector.label": "打开歌词选择器",
+
+  "panel.close": "关闭",
+  "panel.loading": "正在加载歌词…",
+  "panel.no_candidates": "没有其他 LRCLIB 匹配结果",
+  "panel.no_track": "当前没有播放中的曲目",
+  "panel.result": "歌词结果",
+  "panel.selection_failed": "无法加载所选歌词",
+  "panel.synced": "同步",
+  "panel.title": "选择歌词",
+  "panel.unsynced": "未同步",
+  "panel.play": "播放",
+  "panel.pause": "暂停",
+  "panel.next": "下一首",
+  "panel.previous": "上一首",
+  "panel.shuffle": "随机播放",
+
+  "settings.player_allowlist.label": "播放器白名单",
+  "settings.player_allowlist.description": "仅监控这些播放器（按名称或实例匹配）。留空允许所有。",
+  "settings.player_blocklist.label": "播放器黑名单",
+  "settings.player_blocklist.description": "忽略这些播放器（按名称或实例匹配）。",
+
+  "settings.lyrics_source.label": "歌词来源",
+  "settings.lyrics_source.description": "从哪个服务获取歌词。自动模式按顺序尝试所有已配置来源。",
+  "settings.lyrics_source.options.auto": "自动（尝试所有）",
+  "settings.lyrics_source.options.lrclib": "LRCLIB",
+  "settings.lyrics_source.options.netease": "网易云音乐",
+  "settings.lyrics_source.options.splayer": "SPlayer",
+  "settings.lyrics_source.options.qqmusic": "QQ 音乐",
+  "settings.lyrics_source.options.kugou": "酷狗音乐",
+  "settings.lyrics_source.options.qishui": "汽水音乐",
+  "settings.lyrics_source.options.apple_music": "Apple Music",
+  "settings.lyrics_source.options.spotify": "Spotify",
+  "settings.lyrics_source.options.musixmatch": "Musixmatch",
+  "settings.lyrics_source.options.mpris": "本地播放器 (MPRIS)",
+  "settings.lyrics_source.options.custom": "自定义 HTTP 端点",
+  "settings.lyrics_source.options.external": "外部推送 (仅 IPC)",
+
+  "settings.lyrics_sources.label": "自动来源",
+  "settings.lyrics_sources.description": "选择「自动」时依次尝试的来源，按优先级排序。",
+
+  "settings.translation_language.label": "翻译语言",
+  "settings.translation_language.description": "翻译歌词的首选语言。",
+  "settings.translation_language.options.zh-hans": "简体中文",
+  "settings.translation_language.options.zh-hant": "繁體中文",
+  "settings.translation_language.options.en": "英语",
+  "settings.translation_language.options.ja": "日语",
+  "settings.translation_language.options.ko": "韩语",
+
+  "settings.lyrics_offset_ms.label": "歌词偏移 (ms)",
+  "settings.lyrics_offset_ms.description": "手动同步调整。负值 = 歌词提前，正值 = 歌词延后。",
+
+  "settings.poll_interval_ms.label": "轮询间隔 (ms)",
+  "settings.poll_interval_ms.description": "MPRIS 播放位置的轮询频率。越低响应越快，越高 CPU 占用越少。",
+
+  "settings.spotify_sp_dc.label": "Spotify sp_dc Cookie",
+  "settings.spotify_sp_dc.description": "用于获取同步歌词的 Spotify Cookie。",
+
+  "settings.spotify_access_token.label": "Spotify 访问令牌",
+  "settings.spotify_access_token.description": "Spotify API 访问令牌（sp_dc 的替代方案）。",
+
+  "settings.apple_developer_token.label": "Apple Music 开发者令牌",
+  "settings.apple_developer_token.description": "Apple Music API 开发者 JWT。",
+
+  "settings.apple_user_token.label": "Apple Music 用户令牌",
+  "settings.apple_user_token.description": "Apple Music API 用户令牌。",
+
+  "settings.apple_storefront.label": "Apple Music 区域",
+  "settings.apple_storefront.description": "Apple Music 区域代码（如 us, jp, cn）。",
+
+  "settings.musixmatch_token.label": "Musixmatch 令牌",
+  "settings.musixmatch_token.description": "Musixmatch API 访问令牌。",
+
+  "settings.splayer_api_url.label": "SPlayer API 地址",
+  "settings.splayer_api_url.description": "SPlayer 歌词服务的基础 URL。",
+
+  "settings.qishui_api_url.label": "汽水 API 地址",
+  "settings.qishui_api_url.description": "汽水歌词服务的基础 URL。",
+
+  "settings.qishui_token.label": "汽水令牌",
+  "settings.qishui_token.description": "汽水歌词服务的认证令牌。",
+
+  "settings.custom_url.label": "自定义端点 URL",
+  "settings.custom_url.description": "自定义歌词 API 的 URL 模板。可使用 {title}, {artist}, {album}, {duration} 占位符。",
+
+  "settings.custom_json_field.label": "自定义 JSON 字段",
+  "settings.custom_json_field.description": "JSON 响应中歌词文本的路径（点分隔）。",
+
+  "settings.widget.active_color.label": "播放时颜色",
+  "settings.widget.inactive_color.label": "暂停时颜色",
+  "settings.widget.show_glyph.label": "显示图标",
+  "settings.widget.glyph.label": "图标",
+  "settings.widget.hide_when_paused.label": "暂停时隐藏"
+}

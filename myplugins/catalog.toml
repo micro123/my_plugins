@@ -1,0 +1,16 @@
+# Noctalia plugins catalog — myplugins
+# Index of plugins shipped in this directory.
+# The per-plugin plugin.toml stays authoritative; the host re-reads it on enable.
+
+[[plugin]]
+id = "tang/waylyrics"
+name = "Waylyrics"
+version = "1.0.0"
+author = "tang"
+license = "MIT"
+icon = "music"
+description = "Desktop floating lyrics with karaoke highlighting. MPRIS-powered, Waylyrics-style experience."
+deprecated = false
+plugin_api = 9
+tags = ["music", "media", "lyrics", "bar", "panel", "service"]
+dependencies = ["playerctl", "python3", "cp", "chmod"]

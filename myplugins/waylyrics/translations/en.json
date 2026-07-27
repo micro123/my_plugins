@@ -1,0 +1,102 @@
+{
+  "cue_text": "···",
+  "no_lyrics": "No lyrics available",
+  "instrumental": "Instrumental",
+  "intro": "Intro",
+  "source_label": "Lyrics source",
+
+  "shortcut.media.label": "Open media panel",
+  "shortcut.selector.label": "Open lyrics selector",
+
+  "panel.close": "Close",
+  "panel.loading": "Loading lyrics…",
+  "panel.no_candidates": "No alternate LRCLIB results",
+  "panel.no_track": "No track is playing",
+  "panel.result": "Lyrics result",
+  "panel.selection_failed": "Could not load the selected lyrics",
+  "panel.synced": "Synced",
+  "panel.title": "Choose lyrics",
+  "panel.unsynced": "Unsynced",
+  "panel.play": "Play",
+  "panel.pause": "Pause",
+  "panel.next": "Next",
+  "panel.previous": "Previous",
+  "panel.shuffle": "Shuffle",
+
+  "settings.player_allowlist.label": "Player allowlist",
+  "settings.player_allowlist.description": "Only monitor these players (by name or instance). Leave empty to allow all.",
+  "settings.player_blocklist.label": "Player blocklist",
+  "settings.player_blocklist.description": "Ignore these players (by name or instance).",
+
+  "settings.lyrics_source.label": "Lyrics source",
+  "settings.lyrics_source.description": "Which service to fetch lyrics from. Auto tries all configured sources in order.",
+  "settings.lyrics_source.options.auto": "Auto (try all)",
+  "settings.lyrics_source.options.lrclib": "LRCLIB",
+  "settings.lyrics_source.options.netease": "NetEase Cloud Music",
+  "settings.lyrics_source.options.splayer": "SPlayer",
+  "settings.lyrics_source.options.qqmusic": "QQ Music",
+  "settings.lyrics_source.options.kugou": "Kugou",
+  "settings.lyrics_source.options.qishui": "Qishui",
+  "settings.lyrics_source.options.apple_music": "Apple Music",
+  "settings.lyrics_source.options.spotify": "Spotify",
+  "settings.lyrics_source.options.musixmatch": "Musixmatch",
+  "settings.lyrics_source.options.mpris": "Local player (MPRIS)",
+  "settings.lyrics_source.options.custom": "Custom HTTP endpoint",
+  "settings.lyrics_source.options.external": "External (IPC push-only)",
+
+  "settings.lyrics_sources.label": "Auto sources",
+  "settings.lyrics_sources.description": "Sources to try when Auto is selected. Ordered by priority.",
+
+  "settings.translation_language.label": "Translation language",
+  "settings.translation_language.description": "Preferred language for translated lyrics.",
+  "settings.translation_language.options.zh-hans": "Chinese (Simplified)",
+  "settings.translation_language.options.zh-hant": "Chinese (Traditional)",
+  "settings.translation_language.options.en": "English",
+  "settings.translation_language.options.ja": "Japanese",
+  "settings.translation_language.options.ko": "Korean",
+
+  "settings.lyrics_offset_ms.label": "Lyrics offset (ms)",
+  "settings.lyrics_offset_ms.description": "Manual sync adjustment. Negative = lyrics earlier, positive = later.",
+
+  "settings.poll_interval_ms.label": "Poll interval (ms)",
+  "settings.poll_interval_ms.description": "How often to poll MPRIS for playback position. Lower = more responsive, higher = less CPU.",
+
+  "settings.spotify_sp_dc.label": "Spotify sp_dc cookie",
+  "settings.spotify_sp_dc.description": "Spotify cookie for accessing synced lyrics.",
+
+  "settings.spotify_access_token.label": "Spotify access token",
+  "settings.spotify_access_token.description": "Spotify API access token (alternative to sp_dc).",
+
+  "settings.apple_developer_token.label": "Apple Music developer token",
+  "settings.apple_developer_token.description": "Apple Music API developer JWT.",
+
+  "settings.apple_user_token.label": "Apple Music user token",
+  "settings.apple_user_token.description": "Apple Music API user token.",
+
+  "settings.apple_storefront.label": "Apple Music storefront",
+  "settings.apple_storefront.description": "Apple Music regional storefront code (e.g. us, jp, cn).",
+
+  "settings.musixmatch_token.label": "Musixmatch token",
+  "settings.musixmatch_token.description": "Musixmatch API access token.",
+
+  "settings.splayer_api_url.label": "SPlayer API URL",
+  "settings.splayer_api_url.description": "Base URL for the SPlayer lyrics service.",
+
+  "settings.qishui_api_url.label": "Qishui API URL",
+  "settings.qishui_api_url.description": "Base URL for the Qishui lyrics service.",
+
+  "settings.qishui_token.label": "Qishui token",
+  "settings.qishui_token.description": "Authentication token for the Qishui lyrics service.",
+
+  "settings.custom_url.label": "Custom endpoint URL",
+  "settings.custom_url.description": "URL template for a custom lyrics API. Use {title}, {artist}, {album}, {duration} placeholders.",
+
+  "settings.custom_json_field.label": "Custom JSON field",
+  "settings.custom_json_field.description": "Dot-separated path to the lyrics text in the JSON response.",
+
+  "settings.widget.active_color.label": "Active color",
+  "settings.widget.inactive_color.label": "Inactive color",
+  "settings.widget.show_glyph.label": "Show icon",
+  "settings.widget.glyph.label": "Icon",
+  "settings.widget.hide_when_paused.label": "Hide when paused"
+}

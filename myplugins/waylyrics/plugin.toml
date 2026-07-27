@@ -1,0 +1,256 @@
+# Waylyrics — Desktop floating lyrics for Noctalia v5.
+# Forked from h465855hgg/lyrics and extended with a desktop widget
+# that renders Waylyrics-style floating lyrics with per-frame karaoke animation.
+
+id = "tang/waylyrics"
+name = "Waylyrics"
+version = "1.0.0"
+plugin_api = 9
+author = "tang"
+license = "MIT"
+dependencies = ["playerctl", "python3", "cp", "chmod"]
+tags = ["music", "media", "lyrics", "bar", "panel", "service"]
+icon = "music"
+description = "Desktop floating lyrics with karaoke highlighting. MPRIS-powered, Waylyrics-style experience."
+
+# ── Plugin-level Settings ───────────────────────────────────────────
+
+[[setting]]
+key = "player_allowlist"
+type = "string_list"
+label_key = "settings.player_allowlist.label"
+description_key = "settings.player_allowlist.description"
+default = []
+advanced = true
+
+[[setting]]
+key = "player_blocklist"
+type = "string_list"
+label_key = "settings.player_blocklist.label"
+description_key = "settings.player_blocklist.description"
+default = []
+advanced = true
+
+[[setting]]
+key = "lyrics_source"
+type = "select"
+label_key = "settings.lyrics_source.label"
+description_key = "settings.lyrics_source.description"
+default = "auto"
+options = [
+  { value = "auto", label_key = "settings.lyrics_source.options.auto" },
+  { value = "lrclib", label_key = "settings.lyrics_source.options.lrclib" },
+  { value = "netease", label_key = "settings.lyrics_source.options.netease" },
+  { value = "splayer", label_key = "settings.lyrics_source.options.splayer" },
+  { value = "qqmusic", label_key = "settings.lyrics_source.options.qqmusic" },
+  { value = "kugou", label_key = "settings.lyrics_source.options.kugou" },
+  { value = "qishui", label_key = "settings.lyrics_source.options.qishui" },
+  { value = "apple_music", label_key = "settings.lyrics_source.options.apple_music" },
+  { value = "spotify", label_key = "settings.lyrics_source.options.spotify" },
+  { value = "musixmatch", label_key = "settings.lyrics_source.options.musixmatch" },
+  { value = "mpris", label_key = "settings.lyrics_source.options.mpris" },
+  { value = "custom", label_key = "settings.lyrics_source.options.custom" },
+  { value = "external", label_key = "settings.lyrics_source.options.external" },
+]
+
+[[setting]]
+key = "lyrics_sources"
+type = "string_list"
+label_key = "settings.lyrics_sources.label"
+description_key = "settings.lyrics_sources.description"
+default = ["lrclib", "netease", "splayer", "qqmusic", "kugou", "qishui", "apple_music", "spotify", "musixmatch"]
+visible_when = { key = "lyrics_source", values = ["auto"] }
+advanced = true
+
+[[setting]]
+key = "translation_language"
+type = "select"
+label_key = "settings.translation_language.label"
+description_key = "settings.translation_language.description"
+default = "zh-Hans"
+options = [
+  { value = "zh-Hans", label_key = "settings.translation_language.options.zh-hans" },
+  { value = "zh-Hant", label_key = "settings.translation_language.options.zh-hant" },
+  { value = "en", label_key = "settings.translation_language.options.en" },
+  { value = "ja", label_key = "settings.translation_language.options.ja" },
+  { value = "ko", label_key = "settings.translation_language.options.ko" },
+]
+
+[[setting]]
+key = "lyrics_offset_ms"
+type = "int"
+label_key = "settings.lyrics_offset_ms.label"
+description_key = "settings.lyrics_offset_ms.description"
+default = 0
+min = -10000
+max = 10000
+
+[[setting]]
+key = "poll_interval_ms"
+type = "int"
+label_key = "settings.poll_interval_ms.label"
+description_key = "settings.poll_interval_ms.description"
+default = 500
+min = 100
+max = 5000
+advanced = true
+
+# ── Credential Settings ─────────────────────────────────────────────
+
+[[setting]]
+key = "spotify_sp_dc"
+type = "string"
+label_key = "settings.spotify_sp_dc.label"
+description_key = "settings.spotify_sp_dc.description"
+default = ""
+advanced = true
+
+[[setting]]
+key = "spotify_access_token"
+type = "string"
+label_key = "settings.spotify_access_token.label"
+description_key = "settings.spotify_access_token.description"
+default = ""
+advanced = true
+
+[[setting]]
+key = "apple_developer_token"
+type = "string"
+label_key = "settings.apple_developer_token.label"
+description_key = "settings.apple_developer_token.description"
+default = ""
+advanced = true
+
+[[setting]]
+key = "apple_user_token"
+type = "string"
+label_key = "settings.apple_user_token.label"
+description_key = "settings.apple_user_token.description"
+default = ""
+advanced = true
+
+[[setting]]
+key = "apple_storefront"
+type = "string"
+label_key = "settings.apple_storefront.label"
+description_key = "settings.apple_storefront.description"
+default = "us"
+advanced = true
+
+[[setting]]
+key = "musixmatch_token"
+type = "string"
+label_key = "settings.musixmatch_token.label"
+description_key = "settings.musixmatch_token.description"
+default = ""
+advanced = true
+
+[[setting]]
+key = "splayer_api_url"
+type = "string"
+label_key = "settings.splayer_api_url.label"
+description_key = "settings.splayer_api_url.description"
+default = "http://127.0.0.1:25884"
+advanced = true
+
+[[setting]]
+key = "qishui_api_url"
+type = "string"
+label_key = "settings.qishui_api_url.label"
+description_key = "settings.qishui_api_url.description"
+default = ""
+advanced = true
+
+[[setting]]
+key = "qishui_token"
+type = "string"
+label_key = "settings.qishui_token.label"
+description_key = "settings.qishui_token.description"
+default = ""
+advanced = true
+
+[[setting]]
+key = "custom_url"
+type = "string"
+label_key = "settings.custom_url.label"
+description_key = "settings.custom_url.description"
+default = ""
+
+[[setting]]
+key = "custom_json_field"
+type = "string"
+label_key = "settings.custom_json_field.label"
+description_key = "settings.custom_json_field.description"
+default = "syncedLyrics"
+advanced = true
+
+# ── Bar Widget ──────────────────────────────────────────────────────
+
+[[widget]]
+id = "lyrics"
+entry = "lyrics.luau"
+
+  [[widget.setting]]
+  key = "show_glyph"
+  type = "bool"
+  label_key = "settings.widget.show_glyph.label"
+  default = true
+
+  [[widget.setting]]
+  key = "glyph"
+  type = "glyph"
+  label_key = "settings.widget.glyph.label"
+  default = "music"
+  visible_when = { key = "show_glyph", values = ["true"] }
+
+  [[widget.setting]]
+  key = "active_color"
+  type = "color"
+  label_key = "settings.widget.active_color.label"
+  default = "on_surface"
+
+  [[widget.setting]]
+  key = "inactive_color"
+  type = "color"
+  label_key = "settings.widget.inactive_color.label"
+  default = "on_surface_variant"
+
+  [[widget.setting]]
+  key = "hide_when_paused"
+  type = "bool"
+  label_key = "settings.widget.hide_when_paused.label"
+  default = false
+
+# ── Service ─────────────────────────────────────────────────────────
+
+[[service]]
+id = "service"
+entry = "lyrics_service.luau"
+
+# ── Panels ──────────────────────────────────────────────────────────
+
+[[panel]]
+id = "media"
+entry = "panel.luau"
+width = 320
+height = 360
+placement = "floating"
+position = "center"
+
+[[panel]]
+id = "selector"
+entry = "lyrics_selector.luau"
+width = 520
+height = 210
+placement = "attached"
+open_near_click = true
+
+# ── Shortcuts ───────────────────────────────────────────────────────
+
+[[shortcut]]
+id = "open_media"
+entry = "lyrics_shortcut.luau"
+
+[[shortcut]]
+id = "open_selector"
+entry = "shortcut_selector.luau"
