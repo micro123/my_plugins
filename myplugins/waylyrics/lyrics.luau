@@ -42,16 +42,6 @@ function update()
   end
   barWidget.setVisible(true)
 
-  local line = getLineInfo()
-  local lyricText = ""
-  if line then
-    if showTranslation and line.translation and line.translation ~= "" then
-      lyricText = line.translation
-    else
-      lyricText = line.text or ""
-    end
-  end
-
   local artist = track and track.artist or ""
   local title = track and track.title or ""
   local head = ""
@@ -65,22 +55,46 @@ function update()
 
   local children = {}
 
-  if cover and cover ~= "" then
-    children[#children + 1] = ui.image({
-      path = cover, width = 16, height = 16, radius = 8, fit = "cover",
-    })
-  end
+  if playing then
+    -- Playing: cover + artist-title + lyric
+    if cover and cover ~= "" then
+      children[#children + 1] = ui.image({
+        path = cover, width = 16, height = 16, radius = 8, fit = "cover",
+      })
+    end
 
-  if head ~= "" then
-    children[#children + 1] = ui.label({
-      text = head, fontSize = 13, color = "primary", maxLines = 1,
-    })
-  end
+    if head ~= "" then
+      children[#children + 1] = ui.label({
+        text = head, fontSize = 13, color = "primary", maxLines = 1,
+      })
+    end
 
-  if lyricText ~= "" then
-    children[#children + 1] = ui.label({
-      text = lyricText, fontSize = 13, color = "tertiary", maxLines = 1,
-    })
+    local line = getLineInfo()
+    local lyricText = ""
+    if line then
+      if showTranslation and line.translation and line.translation ~= "" then
+        lyricText = line.translation
+      else
+        lyricText = line.text or ""
+      end
+    end
+    if lyricText ~= "" then
+      children[#children + 1] = ui.label({
+        text = lyricText, fontSize = 13, color = "tertiary", maxLines = 1,
+      })
+    end
+  else
+    -- Paused: cover + 已暂停：artist - title in muted color
+    if cover and cover ~= "" then
+      children[#children + 1] = ui.image({
+        path = cover, width = 16, height = 16, radius = 8, fit = "cover",
+      })
+    end
+    if head ~= "" then
+      children[#children + 1] = ui.label({
+        text = noctalia.tr("paused") .. "：" .. head, fontSize = 13, color = inactiveColor, maxLines = 1,
+      })
+    end
   end
 
   barWidget.render(ui.row({ gap = 8, align = "center", onClick = "onOpenPanel" }, children))
