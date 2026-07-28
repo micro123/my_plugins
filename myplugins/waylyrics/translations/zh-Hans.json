@@ -23,6 +23,10 @@
   "panel.next": "下一首",
   "panel.previous": "上一首",
   "panel.shuffle": "随机播放",
+  "panel.source": "来源",
+  "panel.source_label": "歌词来源：",
+  "panel.translated": "有译文",
+  "panel.untranslated": "无译文",
 
   "settings.player_allowlist.label": "播放器白名单",
   "settings.player_allowlist.description": "仅监控这些播放器（按名称或实例匹配）。留空允许所有。",

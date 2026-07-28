@@ -196,7 +196,7 @@ entry = "lyrics_service.luau"
 id = "media"
 entry = "panel.luau"
 width = 320
-height = 360
+height = 420
 placement = "floating"
 position = "center"
 

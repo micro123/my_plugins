@@ -591,7 +591,7 @@ def itunes_cover(track):
     return re.sub(r"/\d+x\d+bb\.", "/400x400bb.", url)
 
 
-def success(source, lines, diag, total=0, cover=""):
+def success(source, lines, diag, total=0, cover="", track_name="", artist_name=""):
     lines = finalize(lines, total)
     if not lines:
         return empty(source, *diag)
@@ -599,6 +599,12 @@ def success(source, lines, diag, total=0, cover=""):
     cover = clean_text(cover)
     if cover:
         payload["cover"] = cover
+    track_name = clean_text(track_name)
+    if track_name:
+        payload["track_name"] = track_name
+    artist_name = clean_text(artist_name)
+    if artist_name:
+        payload["artist_name"] = artist_name
     return payload
 
 
@@ -621,6 +627,7 @@ def adapter_lrclib(track, credentials, options):
     response = success(
         source, parse_lrc(lyrics) or parse_plain(lyrics), ["lrclib: match"],
         duration_ms(track.get("duration")), itunes_cover(track),
+        clean_text(best.get("trackName")), clean_text(best.get("artistName")),
     )
     if response.get("type") == "lyrics":
         response["candidates"] = [lrclib_candidate_metadata(item) for item in matches]
@@ -660,7 +667,9 @@ def adapter_netease(track, credentials, options):
     romanization = data.get("romalrc", {})
     merge_timed(lines, parse_lrc(translation.get("lyric", "") if isinstance(translation, dict) else translation), "translation")
     merge_timed(lines, parse_lrc(romanization.get("lyric", "") if isinstance(romanization, dict) else romanization), "romanization")
-    return success(source, lines, ["netease: match"], duration_ms(track.get("duration")), cover)
+    return success(source, lines, ["netease: match"], duration_ms(track.get("duration")), cover,
+                  clean_text(best.get("name")),
+                  " ".join(clean_text(a.get("name", "")) for a in best.get("artists", [])))
 
 
 def adapter_qqmusic(track, credentials, options):
@@ -694,7 +703,9 @@ def adapter_qqmusic(track, credentials, options):
     lines = parse_lrc(decoded("lyric"))
     merge_timed(lines, parse_lrc(decoded("trans")), "translation")
     merge_timed(lines, parse_lrc(decoded("roma")), "romanization")
-    return success(source, lines, ["qqmusic: match"], duration_ms(track.get("duration")), cover)
+    return success(source, lines, ["qqmusic: match"], duration_ms(track.get("duration")), cover,
+                  clean_text(best.get("songname", best.get("title", ""))),
+                  " ".join(clean_text(a.get("name", "")) for a in best.get("singer", [])))
 
 
 def adapter_splayer(track, credentials, options):
@@ -776,7 +787,9 @@ def adapter_kugou(track, credentials, options):
         content = base64.b64decode(content).decode("utf-8", "replace")
     except (ValueError, TypeError):
         pass
-    return success(source, parse_lrc(content), ["kugou: match"], duration_ms(track.get("duration")), cover)
+    return success(source, parse_lrc(content), ["kugou: match"], duration_ms(track.get("duration")), cover,
+                  clean_text(best.get("songname", best.get("filename", ""))),
+                  clean_text(best.get("singername", "")))
 
 
 ADAPTERS = {

@@ -23,6 +23,10 @@
   "panel.next": "Next",
   "panel.previous": "Previous",
   "panel.shuffle": "Shuffle",
+  "panel.source": "Source",
+  "panel.source_label": "Lyrics source:",
+  "panel.translated": "Translated",
+  "panel.untranslated": "No translation",
 
   "settings.player_allowlist.label": "Player allowlist",
   "settings.player_allowlist.description": "Only monitor these players (by name or instance). Leave empty to allow all.",

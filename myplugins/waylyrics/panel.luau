@@ -8,6 +8,22 @@ local position = 0
 local cover = nil
 local seekLock = false
 local shuffle = false
+local sourceUsed = nil
+local candidateState = {}
+local candidateRequestCounter = 0
+
+local function trackKey(value)
+  if type(value) ~= "table" then return "" end
+  local durationSeconds = math.floor((tonumber(value.duration) or 0) / 1000000)
+  return (value.playerInstance or "") .. "|" .. (value.trackId or "") .. "|"
+    .. (value.title or "") .. "|" .. (value.artist or "") .. "|" .. (value.album or "")
+    .. "|" .. tostring(durationSeconds)
+end
+
+local function currentCandidateState()
+  if type(candidateState) ~= "table" or candidateState.track_key ~= trackKey(track) then return {} end
+  return candidateState
+end
 
 local function clamp(v, lo, hi)
   return math.max(lo, math.min(hi, v))
@@ -101,21 +117,62 @@ local function render()
   rows[#rows + 1] = ui.separator({ thickness = 1, color = "outline" })
 
   local line = getCurrentLine()
+  local lyricLines = {}
   if line then
-    rows[#rows + 1] = ui.label({
+    lyricLines[#lyricLines + 1] = ui.label({
       text = line.text or "", fontSize = 13, color = "on_surface_variant",
       maxLines = 2, textAlign = "center",
     })
-    if line.translation and line.translation ~= "" then
-      rows[#rows + 1] = ui.label({
-        text = line.translation, fontSize = 12, color = "on_surface_variant",
-        opacity = 0.6, maxLines = 2, textAlign = "center",
-      })
-    end
+    local trans = line.translation
+    lyricLines[#lyricLines + 1] = ui.label({
+      text = (trans and trans ~= "") and trans or " ",
+      fontSize = 13, color = "on_surface_variant",
+      maxLines = 2, textAlign = "center",
+    })
   else
-    rows[#rows + 1] = ui.label({
+    lyricLines[#lyricLines + 1] = ui.label({
       text = noctalia.tr("cue_text") or "···",
       fontSize = 13, color = "on_surface_variant", opacity = 0.4, textAlign = "center",
+    })
+    lyricLines[#lyricLines + 1] = ui.label({
+      text = " ", fontSize = 13, color = "on_surface_variant", textAlign = "center",
+    })
+  end
+  rows[#rows + 1] = ui.column({ gap = 4, height = 84 }, lyricLines)
+
+  -- Candidate selector
+  local cState = currentCandidateState()
+  local candidates = type(cState.candidates) == "table" and cState.candidates or {}
+  if #candidates > 1 then
+    local selectedId = tostring(cState.selected_id or "")
+    local options, selectedIdx = {}, 0
+    for idx, c in ipairs(candidates) do
+      local label = tostring(c.source or "")
+      if c.track_name and c.track_name ~= "" then
+        label = label .. " · " .. tostring(c.track_name)
+      end
+      if c.artist_name and c.artist_name ~= "" then
+        label = label .. " - " .. tostring(c.artist_name)
+      end
+      if c.synced then label = label .. " · " .. noctalia.tr("panel.synced") end
+      label = label .. " · " .. noctalia.tr(c.has_translation and "panel.translated" or "panel.untranslated")
+      options[#options + 1] = label
+      if tostring(c.id or "") == selectedId then selectedIdx = idx - 1 end
+    end
+    rows[#rows + 1] = ui.row({ gap = 6, align = "center", opacity = 0.5 }, {
+      ui.label({ text = noctalia.tr("panel.source_label"), fontSize = 10, color = "on_surface_variant" }),
+      ui.select({
+        options = options, selectedIndex = selectedIdx,
+        controlSize = "sm", flexGrow = 1,
+        onChange = "onCandidateChange",
+      }),
+    })
+  end
+
+  if sourceUsed and #candidates <= 1 then
+    rows[#rows + 1] = ui.label({
+      text = noctalia.tr("panel.source") .. ": " .. sourceUsed,
+      fontSize = 11, color = "on_surface_variant", opacity = 0.35, textAlign = "center",
     })
   end
 
@@ -141,6 +198,20 @@ function onShuffleToggle()
   render()
 end
 
+function onCandidateChange(index, _label)
+  local cState = currentCandidateState()
+  local candidates = type(cState.candidates) == "table" and cState.candidates or {}
+  local selectedId = tostring(cState.selected_id or "")
+  local candidate = candidates[(math.floor(tonumber(index) or 0)) + 1]
+  if not candidate or tostring(candidate.id or "") == selectedId or not track then return end
+  candidateRequestCounter = candidateRequestCounter + 1
+  noctalia.state.set("lyrics_candidate_request", {
+    request_id = tostring(os.clock()) .. "-" .. tostring(candidateRequestCounter),
+    candidate_id = tostring(candidate.id or ""),
+    track_key = trackKey(track),
+  })
+end
+
 function onSeek(secStr)
   if seekLock then return end
   local sec = tonumber(secStr)
@@ -164,6 +235,8 @@ noctalia.state.watch("lyrics", function(v) lyrics = v; render() end)
 noctalia.state.watch("position", function(v) position = tonumber(v) or 0; render() end)
 noctalia.state.watch("playing", function(v) playing = v == true; render() end)
 noctalia.state.watch("cover", function(v) if v and v ~= "" then cover = v end; render() end)
+noctalia.state.watch("lyrics_source_used", function(v) sourceUsed = v; render() end)
+noctalia.state.watch("lyrics_candidate_state", function(v) candidateState = type(v) == "table" and v or {}; render() end)
 
 function onOpen(_context)
   track = noctalia.state.get("track")
@@ -172,6 +245,8 @@ function onOpen(_context)
   playing = noctalia.state.get("playing") == true
   local cv = noctalia.state.get("cover")
   if cv and cv ~= "" then cover = cv end
+  sourceUsed = noctalia.state.get("lyrics_source_used")
+  candidateState = noctalia.state.get("lyrics_candidate_state") or {}
   render()
 end
 
@@ -181,4 +256,6 @@ lyrics = noctalia.state.get("lyrics")
 position = noctalia.state.get("position") or 0
 playing = noctalia.state.get("playing") == true
 cover = noctalia.state.get("cover")
+sourceUsed = noctalia.state.get("lyrics_source_used")
+candidateState = noctalia.state.get("lyrics_candidate_state") or {}
 render()
