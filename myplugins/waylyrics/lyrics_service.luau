@@ -26,7 +26,7 @@ noctalia.mkdirAll(requestDir)
 local krcTmp = cacheDir .. "/krc.tmp"
 local lyricsSource = noctalia.getConfig("lyrics_source") or "auto"
 local lyricsSources = noctalia.getConfig("lyrics_sources") or {
-  "lrclib", "netease", "splayer", "qqmusic", "kugou", "qishui", "apple_music", "spotify", "musixmatch"
+  "lrclib", "netease", "splayer", "qqmusic", "kugou"
 }
 local customUrl = noctalia.getConfig("custom_url") or ""
 local customJsonField = noctalia.getConfig("custom_json_field") or "syncedLyrics"
@@ -272,25 +272,7 @@ local function parsePlain(text)
 end
 
 local function credentialsFor(source)
-  if source == "spotify" then
-    return {
-      spotify_sp_dc = noctalia.getConfig("spotify_sp_dc") or "",
-      spotify_access_token = noctalia.getConfig("spotify_access_token") or "",
-    }
-  elseif source == "apple_music" then
-    return {
-      apple_developer_token = noctalia.getConfig("apple_developer_token") or "",
-      apple_user_token = noctalia.getConfig("apple_user_token") or "",
-      apple_storefront = noctalia.getConfig("apple_storefront") or "us",
-    }
-  elseif source == "musixmatch" then
-    return { musixmatch_token = noctalia.getConfig("musixmatch_token") or "" }
-  elseif source == "qishui" then
-    return {
-      qishui_token = noctalia.getConfig("qishui_token") or "",
-      qishui_api_url = noctalia.getConfig("qishui_api_url") or "",
-    }
-  elseif source == "splayer" then
+  if source == "splayer" then
     return { splayer_api_url = noctalia.getConfig("splayer_api_url") or "http://127.0.0.1:25884" }
   end
   return {}
@@ -924,14 +906,6 @@ function onConfigChanged()
   local nextPollInterval = tonumber(noctalia.getConfig("poll_interval_ms")) or 500
   local nextOffset = tonumber(noctalia.getConfig("lyrics_offset_ms")) or 0
   local nextCredentialSignature = table.concat({
-    noctalia.getConfig("spotify_sp_dc") or "",
-    noctalia.getConfig("spotify_access_token") or "",
-    noctalia.getConfig("apple_developer_token") or "",
-    noctalia.getConfig("apple_user_token") or "",
-    noctalia.getConfig("apple_storefront") or "us",
-    noctalia.getConfig("musixmatch_token") or "",
-    noctalia.getConfig("qishui_token") or "",
-    noctalia.getConfig("qishui_api_url") or "",
     noctalia.getConfig("splayer_api_url") or "http://127.0.0.1:25884",
     noctalia.getConfig("translation_language") or "zh-Hans",
   }, "\0")

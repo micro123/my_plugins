@@ -5,7 +5,7 @@
 id = "tang/waylyrics"
 name = "Waylyrics"
 version = "1.0.0"
-plugin_api = 9
+plugin_api = 3
 author = "tang"
 license = "MIT"
 dependencies = ["playerctl", "python3", "cp", "chmod"]
@@ -44,10 +44,6 @@ options = [
   { value = "splayer", label_key = "settings.lyrics_source.options.splayer" },
   { value = "qqmusic", label_key = "settings.lyrics_source.options.qqmusic" },
   { value = "kugou", label_key = "settings.lyrics_source.options.kugou" },
-  { value = "qishui", label_key = "settings.lyrics_source.options.qishui" },
-  { value = "apple_music", label_key = "settings.lyrics_source.options.apple_music" },
-  { value = "spotify", label_key = "settings.lyrics_source.options.spotify" },
-  { value = "musixmatch", label_key = "settings.lyrics_source.options.musixmatch" },
   { value = "mpris", label_key = "settings.lyrics_source.options.mpris" },
   { value = "custom", label_key = "settings.lyrics_source.options.custom" },
   { value = "external", label_key = "settings.lyrics_source.options.external" },
@@ -58,7 +54,7 @@ key = "lyrics_sources"
 type = "string_list"
 label_key = "settings.lyrics_sources.label"
 description_key = "settings.lyrics_sources.description"
-default = ["lrclib", "netease", "splayer", "qqmusic", "kugou", "qishui", "apple_music", "spotify", "musixmatch"]
+default = ["lrclib", "netease", "splayer", "qqmusic", "kugou"]
 visible_when = { key = "lyrics_source", values = ["auto"] }
 advanced = true
 
@@ -98,75 +94,11 @@ advanced = true
 # ── Credential Settings ─────────────────────────────────────────────
 
 [[setting]]
-key = "spotify_sp_dc"
-type = "string"
-label_key = "settings.spotify_sp_dc.label"
-description_key = "settings.spotify_sp_dc.description"
-default = ""
-advanced = true
-
-[[setting]]
-key = "spotify_access_token"
-type = "string"
-label_key = "settings.spotify_access_token.label"
-description_key = "settings.spotify_access_token.description"
-default = ""
-advanced = true
-
-[[setting]]
-key = "apple_developer_token"
-type = "string"
-label_key = "settings.apple_developer_token.label"
-description_key = "settings.apple_developer_token.description"
-default = ""
-advanced = true
-
-[[setting]]
-key = "apple_user_token"
-type = "string"
-label_key = "settings.apple_user_token.label"
-description_key = "settings.apple_user_token.description"
-default = ""
-advanced = true
-
-[[setting]]
-key = "apple_storefront"
-type = "string"
-label_key = "settings.apple_storefront.label"
-description_key = "settings.apple_storefront.description"
-default = "us"
-advanced = true
-
-[[setting]]
-key = "musixmatch_token"
-type = "string"
-label_key = "settings.musixmatch_token.label"
-description_key = "settings.musixmatch_token.description"
-default = ""
-advanced = true
-
-[[setting]]
 key = "splayer_api_url"
 type = "string"
 label_key = "settings.splayer_api_url.label"
 description_key = "settings.splayer_api_url.description"
 default = "http://127.0.0.1:25884"
-advanced = true
-
-[[setting]]
-key = "qishui_api_url"
-type = "string"
-label_key = "settings.qishui_api_url.label"
-description_key = "settings.qishui_api_url.description"
-default = ""
-advanced = true
-
-[[setting]]
-key = "qishui_token"
-type = "string"
-label_key = "settings.qishui_token.label"
-description_key = "settings.qishui_token.description"
-default = ""
 advanced = true
 
 [[setting]]

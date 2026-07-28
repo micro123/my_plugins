@@ -37,10 +37,6 @@
   "settings.lyrics_source.options.splayer": "SPlayer",
   "settings.lyrics_source.options.qqmusic": "QQ 音乐",
   "settings.lyrics_source.options.kugou": "酷狗音乐",
-  "settings.lyrics_source.options.qishui": "汽水音乐",
-  "settings.lyrics_source.options.apple_music": "Apple Music",
-  "settings.lyrics_source.options.spotify": "Spotify",
-  "settings.lyrics_source.options.musixmatch": "Musixmatch",
   "settings.lyrics_source.options.mpris": "本地播放器 (MPRIS)",
   "settings.lyrics_source.options.custom": "自定义 HTTP 端点",
   "settings.lyrics_source.options.external": "外部推送 (仅 IPC)",
@@ -62,32 +58,8 @@
   "settings.poll_interval_ms.label": "轮询间隔 (ms)",
   "settings.poll_interval_ms.description": "MPRIS 播放位置的轮询频率。越低响应越快，越高 CPU 占用越少。",
 
-  "settings.spotify_sp_dc.label": "Spotify sp_dc Cookie",
-  "settings.spotify_sp_dc.description": "用于获取同步歌词的 Spotify Cookie。",
-
-  "settings.spotify_access_token.label": "Spotify 访问令牌",
-  "settings.spotify_access_token.description": "Spotify API 访问令牌（sp_dc 的替代方案）。",
-
-  "settings.apple_developer_token.label": "Apple Music 开发者令牌",
-  "settings.apple_developer_token.description": "Apple Music API 开发者 JWT。",
-
-  "settings.apple_user_token.label": "Apple Music 用户令牌",
-  "settings.apple_user_token.description": "Apple Music API 用户令牌。",
-
-  "settings.apple_storefront.label": "Apple Music 区域",
-  "settings.apple_storefront.description": "Apple Music 区域代码（如 us, jp, cn）。",
-
-  "settings.musixmatch_token.label": "Musixmatch 令牌",
-  "settings.musixmatch_token.description": "Musixmatch API 访问令牌。",
-
   "settings.splayer_api_url.label": "SPlayer API 地址",
   "settings.splayer_api_url.description": "SPlayer 歌词服务的基础 URL。",
-
-  "settings.qishui_api_url.label": "汽水 API 地址",
-  "settings.qishui_api_url.description": "汽水歌词服务的基础 URL。",
-
-  "settings.qishui_token.label": "汽水令牌",
-  "settings.qishui_token.description": "汽水歌词服务的认证令牌。",
 
   "settings.custom_url.label": "自定义端点 URL",
   "settings.custom_url.description": "自定义歌词 API 的 URL 模板。可使用 {title}, {artist}, {album}, {duration} 占位符。",

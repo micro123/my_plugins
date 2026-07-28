@@ -37,10 +37,6 @@
   "settings.lyrics_source.options.splayer": "SPlayer",
   "settings.lyrics_source.options.qqmusic": "QQ Music",
   "settings.lyrics_source.options.kugou": "Kugou",
-  "settings.lyrics_source.options.qishui": "Qishui",
-  "settings.lyrics_source.options.apple_music": "Apple Music",
-  "settings.lyrics_source.options.spotify": "Spotify",
-  "settings.lyrics_source.options.musixmatch": "Musixmatch",
   "settings.lyrics_source.options.mpris": "Local player (MPRIS)",
   "settings.lyrics_source.options.custom": "Custom HTTP endpoint",
   "settings.lyrics_source.options.external": "External (IPC push-only)",
@@ -62,32 +58,8 @@
   "settings.poll_interval_ms.label": "Poll interval (ms)",
   "settings.poll_interval_ms.description": "How often to poll MPRIS for playback position. Lower = more responsive, higher = less CPU.",
 
-  "settings.spotify_sp_dc.label": "Spotify sp_dc cookie",
-  "settings.spotify_sp_dc.description": "Spotify cookie for accessing synced lyrics.",
-
-  "settings.spotify_access_token.label": "Spotify access token",
-  "settings.spotify_access_token.description": "Spotify API access token (alternative to sp_dc).",
-
-  "settings.apple_developer_token.label": "Apple Music developer token",
-  "settings.apple_developer_token.description": "Apple Music API developer JWT.",
-
-  "settings.apple_user_token.label": "Apple Music user token",
-  "settings.apple_user_token.description": "Apple Music API user token.",
-
-  "settings.apple_storefront.label": "Apple Music storefront",
-  "settings.apple_storefront.description": "Apple Music regional storefront code (e.g. us, jp, cn).",
-
-  "settings.musixmatch_token.label": "Musixmatch token",
-  "settings.musixmatch_token.description": "Musixmatch API access token.",
-
   "settings.splayer_api_url.label": "SPlayer API URL",
   "settings.splayer_api_url.description": "Base URL for the SPlayer lyrics service.",
-
-  "settings.qishui_api_url.label": "Qishui API URL",
-  "settings.qishui_api_url.description": "Base URL for the Qishui lyrics service.",
-
-  "settings.qishui_token.label": "Qishui token",
-  "settings.qishui_token.description": "Authentication token for the Qishui lyrics service.",
 
   "settings.custom_url.label": "Custom endpoint URL",
   "settings.custom_url.description": "URL template for a custom lyrics API. Use {title}, {artist}, {album}, {duration} placeholders.",

@@ -10,7 +10,7 @@ Forked and extended from the community [Lyrics](https://github.com/noctalia-dev/
 
 - **Desktop widget** — Floating lyrics overlay with per-frame karaoke highlighting
 - **Bar widget** — Compact bar companion with click-to-toggle track info
-- **10+ lyric sources** — LRCLIB, NetEase, QQ Music, Spotify, Apple Music, Kugou, and more
+- **10+ lyric sources** — LRCLIB, NetEase, QQ Music, Kugou, and more
 - **Character-level karaoke** — Smooth color gradient across each character as the song plays
 - **Bilingual display** — Original lyrics + translation/romanization
 - **MPRIS auto-detection** — Works with any player that implements MPRIS (Spotify, Feishin, mpv, Firefox, etc.)
@@ -96,7 +96,7 @@ noctalia msg plugin tang/waylyrics:service all clear
 
 - Original community plugin: [h465855hgg/lyrics](https://github.com/noctalia-dev/community-plugins)
 - Inspired by [Waylyrics](https://github.com/waylyrics/waylyrics) — the furry way to show desktop lyrics
-- Lyric sources: LRCLIB, NetEase Cloud Music, QQ Music, Kugou, Qishui, SPlayer, Apple Music, Spotify, Musixmatch
+- Lyric sources: LRCLIB, NetEase Cloud Music, QQ Music, Kugou, SPlayer
 
 ## License
 
