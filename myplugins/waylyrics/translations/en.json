@@ -71,5 +71,13 @@
   "settings.widget.inactive_color.label": "Inactive color",
   "settings.widget.show_glyph.label": "Show icon",
   "settings.widget.glyph.label": "Icon",
-  "settings.widget.hide_when_paused.label": "Hide when paused"
+  "settings.widget.hide_when_paused.label": "Hide when paused",
+  "settings.widget.show_progress_ring.label": "Show progress ring",
+  "settings.widget.show_progress_ring.description": "Overlay a circular playback progress indicator on the album art.",
+  "settings.widget.ring_color.label": "Ring color",
+  "settings.widget.ring_color.description": "Color of the played progress arc.",
+  "settings.widget.ring_bg_color.label": "Ring track color",
+  "settings.widget.ring_bg_color.description": "Color of the unplayed track ring.",
+  "settings.widget.ring_size.label": "Ring size",
+  "settings.widget.ring_size.description": "Display size of the cover with progress ring, in pixels."
 }

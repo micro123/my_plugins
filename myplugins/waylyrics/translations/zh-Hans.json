@@ -71,5 +71,13 @@
   "settings.widget.inactive_color.label": "暂停时颜色",
   "settings.widget.show_glyph.label": "显示图标",
   "settings.widget.glyph.label": "图标",
-  "settings.widget.hide_when_paused.label": "暂停时隐藏"
+  "settings.widget.hide_when_paused.label": "暂停时隐藏",
+  "settings.widget.show_progress_ring.label": "显示进度环",
+  "settings.widget.show_progress_ring.description": "在专辑封面上叠加圆形播放进度环。",
+  "settings.widget.ring_color.label": "进度环颜色",
+  "settings.widget.ring_color.description": "已播放弧线的颜色。",
+  "settings.widget.ring_bg_color.label": "进度环底色",
+  "settings.widget.ring_bg_color.description": "未播放轨道的颜色。",
+  "settings.widget.ring_size.label": "进度环尺寸",
+  "settings.widget.ring_size.description": "封面图片的显示尺寸，包含进度环（像素）。"
 }

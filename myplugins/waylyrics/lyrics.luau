@@ -6,12 +6,15 @@ noctalia.setUpdateInterval(200)
 local hideWhenPaused = noctalia.getConfig("hide_when_paused") == true
 local activeColor = noctalia.getConfig("active_color") or "on_surface"
 local inactiveColor = noctalia.getConfig("inactive_color") or "on_surface_variant"
+local showProgressRing = noctalia.getConfig("show_progress_ring") ~= false
+local ringSize = tonumber(noctalia.getConfig("ring_size")) or 24
 
 local track = nil
 local lyrics = nil
 local playing = false
 local position = 0
 local cover = nil
+local coverRing = nil
 local showTranslation = false
 
 local function getLineInfo()
@@ -29,12 +32,41 @@ function onOpenPanel()
   noctalia.togglePanel("tang/waylyrics:media")
 end
 
+local function renderCover(children)
+  -- Prefer the composited ring image when available and enabled.
+  local cr = coverRing
+  if showProgressRing and type(cr) == "string" and cr ~= "" and playing then
+    children[#children + 1] = ui.image({
+      path = cr, width = ringSize, height = ringSize,
+    })
+  elseif type(cover) == "string" and cover ~= "" then
+    children[#children + 1] = ui.image({
+      path = cover, width = 16, height = 16, radius = 8, fit = "cover",
+    })
+  end
+end
+
+local function renderPausedCover(children)
+  -- Show the last ring (frozen progress) or plain cover when paused.
+  local cr = coverRing
+  if showProgressRing and type(cr) == "string" and cr ~= "" then
+    children[#children + 1] = ui.image({
+      path = cr, width = ringSize, height = ringSize,
+    })
+  elseif type(cover) == "string" and cover ~= "" then
+    children[#children + 1] = ui.image({
+      path = cover, width = 16, height = 16, radius = 8, fit = "cover",
+    })
+  end
+end
+
 function update()
   track = noctalia.state.get("track")
   lyrics = noctalia.state.get("lyrics")
   position = noctalia.state.get("position") or 0
   playing = noctalia.state.get("playing") == true
   cover = noctalia.state.get("cover")
+  coverRing = noctalia.state.get("cover_ring")
 
   if hideWhenPaused and not playing then
     barWidget.setVisible(false)
@@ -56,19 +88,12 @@ function update()
   local children = {}
 
   if playing then
-    -- Playing: cover + artist-title + lyric
-    if cover and cover ~= "" then
-      children[#children + 1] = ui.image({
-        path = cover, width = 16, height = 16, radius = 8, fit = "cover",
-      })
-    end
-
+    renderCover(children)
     if head ~= "" then
       children[#children + 1] = ui.label({
         text = head, fontSize = 13, color = "primary", maxLines = 1,
       })
     end
-
     local line = getLineInfo()
     local lyricText = ""
     if line then
@@ -84,12 +109,7 @@ function update()
       })
     end
   else
-    -- Paused: cover + 已暂停：artist - title in muted color
-    if cover and cover ~= "" then
-      children[#children + 1] = ui.image({
-        path = cover, width = 16, height = 16, radius = 8, fit = "cover",
-      })
-    end
+    renderPausedCover(children)
     if head ~= "" then
       children[#children + 1] = ui.label({
         text = noctalia.tr("paused") .. "：" .. head, fontSize = 13, color = inactiveColor, maxLines = 1,
@@ -110,4 +130,5 @@ lyrics = noctalia.state.get("lyrics")
 position = noctalia.state.get("position") or 0
 playing = noctalia.state.get("playing") == true
 cover = noctalia.state.get("cover")
+coverRing = noctalia.state.get("cover_ring")
 update()

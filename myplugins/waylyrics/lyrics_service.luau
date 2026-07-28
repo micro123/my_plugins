@@ -19,7 +19,7 @@ local coverInFlight = nil
 local coverFetchGeneration = 0
 local maxCoverFiles = 80
 local pluginDir = noctalia.pluginDir() or "/tmp"
-local cacheDir = pluginDir .. "/.cache"
+local cacheDir = "/tmp/waylyrics-covers"
 noctalia.mkdirAll(cacheDir)
 local requestDir = cacheDir .. "/requests"
 noctalia.mkdirAll(requestDir)
@@ -42,11 +42,47 @@ local pendingSourceCoverUrl = ""
 local mprisCoverFailed = false
 local maybeApplyCover
 
+-- Ring overlay state
+local function resolveHexColor(value, fallback)
+  if type(value) ~= "string" then return fallback end
+  -- Already a hex color
+  if value:match("^#[0-9A-Fa-f]+$") then return value end
+  -- Token with alpha suffix, e.g. "primary/0.6"
+  local token, alpha = value:match("^([%w_]+)/([%d.]+)$")
+  -- Map common Noctalia palette tokens to reasonable hex values (theme-agnostic)
+  local TOKENS = {
+    primary = "#a0c4ff",       on_surface = "#e0e0e0",
+    secondary = "#bdb2ff",     on_surface_variant = "#a0a0a0",
+    tertiary = "#9bf6ff",      outline = "#666666",
+    error = "#ff6b6b",         surface = "#1c1c1c",
+    -- Color names
+    red = "#ff0000", green = "#00ff00", blue = "#0000ff",
+    white = "#ffffff", black = "#000000",
+  }
+  local hex = TOKENS[token or value]
+  if not hex then return fallback end
+  if alpha then
+    local a = math.floor(tonumber(alpha) * 255)
+    return hex .. string.format("%02x", math.max(0, math.min(255, a)))
+  end
+  return hex
+end
+local ringColor = resolveHexColor(noctalia.getConfig("ring_color"), "#1db954")
+local ringBgColor = resolveHexColor(noctalia.getConfig("ring_bg_color"), "#ffffff40")
+local ringCache = {}
+local ringInFlight = nil
+local ringCurrBucket = -1
+local ringLastGenMs = 0
+local RING_BUCKET_GRANULARITY = 3
+local ringDir = "/tmp/waylyrics-rings"
+noctalia.mkdirAll(ringDir)
+
 for _, name in ipairs(noctalia.listDir(requestDir) or {}) do
   if name:match("^source_request_.*%.json$") then noctalia.removeFile(requestDir .. "/" .. name) end
 end
 
 local pruneCoverCache
+local pruneRingCache, coverStemFromPath, generateRing
 
 local function normalizePatterns(value)
   if type(value) ~= "table" then return {} end
@@ -131,6 +167,9 @@ local function clearPlayerState()
   noctalia.state.set("lyrics", nil)
   publishCandidates("")
   noctalia.state.set("cover", nil)
+  noctalia.state.set("cover_ring", nil)
+  ringCurrBucket = -1
+  ringLastGenMs = 0
   noctalia.state.set("playing", false)
 end
 
@@ -228,6 +267,82 @@ pruneCoverCache = function()
     end
   end
   coverCache = keep
+  pruneRingCache()
+end
+
+pruneRingCache = function()
+  local names = noctalia.listDir(ringDir) or {}
+  local files = {}
+  for _, name in ipairs(names) do
+    if name:match("^ring_.+%.png$") then
+      local path = ringDir .. "/" .. name
+      local info = noctalia.fileInfo(path)
+      files[#files + 1] = { path = path, mtime = info and info.mtime or 0 }
+    end
+  end
+  if #files > maxCoverFiles then
+    table.sort(files, function(a, b) return a.mtime < b.mtime end)
+    for index = 1, #files - maxCoverFiles do
+      noctalia.removeFile(files[index].path)
+    end
+  end
+  local keep = {}
+  for key, path in pairs(ringCache) do
+    if type(path) == "string" and noctalia.fileExists(path) then
+      keep[key] = path
+    end
+  end
+  ringCache = keep
+end
+
+coverStemFromPath = function(path)
+  local filename = path:match("([^/]+)$") or path
+  return filename:gsub("%.[^.]+$", "")
+end
+
+generateRing = function(coverPath, progress, tk)
+  if not coverPath or coverPath == "" then return end
+  if not noctalia.fileExists(coverPath) then return end
+
+  local bucket = math.floor(progress * 100 / RING_BUCKET_GRANULARITY)
+  if bucket == ringCurrBucket then return end
+
+  -- Throttle: skip every other poll cycle (poll is every ~500ms)
+  ringLastGenMs = ringLastGenMs + 1
+  if ringLastGenMs % 2 == 0 then return end
+
+  local stem = coverStemFromPath(coverPath)
+  local colorKey = ringColor:sub(2) .. ringBgColor:sub(2):gsub("[^%w]", ""):sub(1, 12)
+  local ringKey = stem .. "_" .. colorKey .. "_" .. tostring(bucket)
+  local outputPath = ringDir .. "/ring_" .. ringKey .. ".png"
+
+  if ringCache[ringKey] and noctalia.fileExists(ringCache[ringKey]) then
+    noctalia.state.set("cover_ring", ringCache[ringKey])
+    ringCurrBucket = bucket
+    return
+  end
+
+  if ringInFlight == ringKey then return end
+  ringInFlight = ringKey
+
+  local command = "python3 " .. shellQuote(pluginDir .. "/cover_ring.py")
+    .. " " .. shellQuote(coverPath)
+    .. " " .. tostring(progress)
+    .. " " .. shellQuote(ringColor)
+    .. " " .. shellQuote(ringBgColor)
+    .. " " .. shellQuote(outputPath)
+
+  noctalia.runAsync(command, function(result)
+    ringInFlight = nil
+    if tk ~= lastTrackKey then return end
+    local parsed = noctalia.json.decode(result.stdout or "")
+    if parsed and parsed.ok then
+      ringCache[ringKey] = outputPath
+      ringCurrBucket = bucket
+      noctalia.state.set("cover_ring", outputPath)
+      pruneRingCache()
+    end
+  end)
 end
 
 pruneCoverCache()
@@ -696,6 +811,7 @@ local function fetchCover(track, artUrl)
         pendingSourceCoverUrl = ""
       end
       noctalia.state.set("cover", path)
+      ringCurrBucket = -1
       pruneCoverCache()
     elseif url == currentArtUrl then
       mprisCoverFailed = true
@@ -882,6 +998,15 @@ local function poll()
         fetchCover(t, selected.artUrl)
       end
     end
+
+    -- Update progress ring
+    if playing and t.duration and t.duration > 0 then
+      local progress = math.max(0, math.min(1, t.position / t.duration))
+      local coverPath = noctalia.state.get("cover")
+      if coverPath and coverPath ~= "" then
+        generateRing(coverPath, progress, tk)
+      end
+    end
   end)
   if not started then pollInFlight = false end
 end
@@ -925,6 +1050,11 @@ function onConfigChanged()
   credentialSignature = nextCredentialSignature
   playerAllowlist = nextAllowlist
   playerBlocklist = nextBlocklist
+  ringColor = resolveHexColor(noctalia.getConfig("ring_color"), "#1db954")
+  ringBgColor = resolveHexColor(noctalia.getConfig("ring_bg_color"), "#ffffff40")
+  -- Reset ring cache if colors changed
+  ringCurrBucket = -1
+  ringCache = {}
   if playersChanged then
     currentPlayerInstance = ""
     fetchGeneration = fetchGeneration + 1

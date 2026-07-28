@@ -5,7 +5,7 @@
 id = "tang/waylyrics"
 name = "Waylyrics"
 version = "1.0.0"
-plugin_api = 3
+plugin_api = 14
 author = "tang"
 license = "MIT"
 dependencies = ["playerctl", "python3", "cp", "chmod"]
@@ -116,6 +116,20 @@ description_key = "settings.custom_json_field.description"
 default = "syncedLyrics"
 advanced = true
 
+[[setting]]
+key = "ring_color"
+type = "color"
+label_key = "settings.widget.ring_color.label"
+description_key = "settings.widget.ring_color.description"
+default = "#1db954"
+
+[[setting]]
+key = "ring_bg_color"
+type = "color"
+label_key = "settings.widget.ring_bg_color.label"
+description_key = "settings.widget.ring_bg_color.description"
+default = "#ffffff40"
+
 # ── Bar Widget ──────────────────────────────────────────────────────
 
 [[widget]]
@@ -152,6 +166,23 @@ entry = "lyrics.luau"
   type = "bool"
   label_key = "settings.widget.hide_when_paused.label"
   default = false
+
+  [[widget.setting]]
+  key = "show_progress_ring"
+  type = "bool"
+  label_key = "settings.widget.show_progress_ring.label"
+  description_key = "settings.widget.show_progress_ring.description"
+  default = true
+
+  [[widget.setting]]
+  key = "ring_size"
+  type = "int"
+  label_key = "settings.widget.ring_size.label"
+  description_key = "settings.widget.ring_size.description"
+  default = 24
+  min = 16
+  max = 32
+  visible_when = { key = "show_progress_ring", values = ["true"] }
 
 # ── Service ─────────────────────────────────────────────────────────
 
