@@ -1,5 +1,5 @@
 --!nonstrict
--- Waylyrics bar widget — cover · artist - title · lyric.
+-- Waylyrics bar widget — cover · lyric.
 
 noctalia.setUpdateInterval(200)
 
@@ -9,7 +9,6 @@ local inactiveColor = noctalia.getConfig("inactive_color") or "on_surface_varian
 local showProgressRing = noctalia.getConfig("show_progress_ring") ~= false
 local ringSize = tonumber(noctalia.getConfig("ring_size")) or 24
 
-local track = nil
 local lyrics = nil
 local playing = false
 local position = 0
@@ -61,7 +60,6 @@ local function renderPausedCover(children)
 end
 
 function update()
-  track = noctalia.state.get("track")
   lyrics = noctalia.state.get("lyrics")
   position = noctalia.state.get("position") or 0
   playing = noctalia.state.get("playing") == true
@@ -74,26 +72,10 @@ function update()
   end
   barWidget.setVisible(true)
 
-  local artist = track and track.artist or ""
-  local title = track and track.title or ""
-  local head = ""
-  if artist ~= "" and title ~= "" then
-    head = artist .. " - " .. title
-  elseif title ~= "" then
-    head = title
-  elseif artist ~= "" then
-    head = artist
-  end
-
   local children = {}
 
   if playing then
     renderCover(children)
-    if head ~= "" then
-      children[#children + 1] = ui.label({
-        text = head, fontSize = 13, color = "primary", maxLines = 1,
-      })
-    end
     local line = getLineInfo()
     local lyricText = ""
     if line then
@@ -105,14 +87,23 @@ function update()
     end
     if lyricText ~= "" then
       children[#children + 1] = ui.label({
-        text = lyricText, fontSize = 13, color = "tertiary", maxLines = 1,
+        text = lyricText, fontSize = 13, color = activeColor, maxLines = 1,
+      })
+    else
+      children[#children + 1] = ui.label({
+        text = noctalia.tr("cue_text"), fontSize = 13, color = inactiveColor, maxLines = 1,
       })
     end
   else
     renderPausedCover(children)
-    if head ~= "" then
+    local line = getLineInfo()
+    if line then
       children[#children + 1] = ui.label({
-        text = noctalia.tr("paused") .. "：" .. head, fontSize = 13, color = inactiveColor, maxLines = 1,
+        text = line.text or "", fontSize = 13, color = inactiveColor, maxLines = 1,
+      })
+    else
+      children[#children + 1] = ui.label({
+        text = noctalia.tr("paused"), fontSize = 13, color = inactiveColor, maxLines = 1,
       })
     end
   end
@@ -125,7 +116,6 @@ function onRightClick()
 end
 
 -- Seed
-track = noctalia.state.get("track")
 lyrics = noctalia.state.get("lyrics")
 position = noctalia.state.get("position") or 0
 playing = noctalia.state.get("playing") == true
