@@ -181,12 +181,31 @@ end
 
 -- ── Controls ─────────────────────────────────────────────────────
 
+local function shellQuote(v)
+  return "'" .. tostring(v):gsub("'", "'\\''") .. "'"
+end
+
+local function playerInstance()
+  return noctalia.state.get("player_instance") or ""
+end
+
 local function playerCtl(action)
-  local instance = noctalia.state.get("player_instance") or ""
-  local cmd = instance ~= ""
-    and ("playerctl --player " .. instance .. " " .. action)
+  local inst = playerInstance()
+  local cmd = inst ~= ""
+    and ("playerctl --player " .. inst .. " " .. action)
     or ("playerctl " .. action)
   noctalia.runAsync(cmd)
+end
+
+local function queryShuffle()
+  local inst = playerInstance()
+  if inst == "" then return end
+  noctalia.runAsync("playerctl --player " .. shellQuote(inst) .. " shuffle", function(r)
+    if r.exitCode == 0 then
+      shuffle = (r.stdout or ""):match("On") ~= nil
+      render()
+    end
+  end)
 end
 function onPlayPause() playerCtl("play-pause") end
 function onNext() playerCtl("next") end
@@ -196,6 +215,8 @@ function onShuffleToggle()
   shuffle = not shuffle
   playerCtl(shuffle and "shuffle on" or "shuffle off")
   render()
+  -- Confirm actual state after a short delay.
+  noctalia.runAsync("sleep 0.3", queryShuffle)
 end
 
 function onCandidateChange(index, _label)
@@ -248,6 +269,7 @@ function onOpen(_context)
   sourceUsed = noctalia.state.get("lyrics_source_used")
   candidateState = noctalia.state.get("lyrics_candidate_state") or {}
   render()
+  queryShuffle()
 end
 
 -- Seed
