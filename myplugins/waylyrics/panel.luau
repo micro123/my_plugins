@@ -219,6 +219,19 @@ function onShuffleToggle()
   noctalia.runAsync("sleep 0.3", queryShuffle)
 end
 
+function onKey(chord, pressed)
+  if not pressed then return end
+  if chord == "space" then
+    onPlayPause()
+  elseif chord == "left" then
+    onPrev()
+  elseif chord == "right" then
+    onNext()
+  elseif chord == "s" then
+    onShuffleToggle()
+  end
+end
+
 function onCandidateChange(index, _label)
   local cState = currentCandidateState()
   local candidates = type(cState.candidates) == "table" and cState.candidates or {}

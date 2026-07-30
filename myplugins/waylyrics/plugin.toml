@@ -199,6 +199,7 @@ width = 320
 height = 420
 placement = "floating"
 position = "center"
+capture_keys = ["space", "left", "right", "s"]
 
 [[panel]]
 id = "selector"
