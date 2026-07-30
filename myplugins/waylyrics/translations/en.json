@@ -6,6 +6,9 @@
   "intro": "Intro",
   "source_label": "Lyrics source",
 
+  "settings.debug_log.label": "Debug logging",
+  "settings.debug_log.description": "Output debug logs to help diagnose issues.",
+
   "shortcut.media.label": "Open media panel",
   "shortcut.selector.label": "Open lyrics selector",
 

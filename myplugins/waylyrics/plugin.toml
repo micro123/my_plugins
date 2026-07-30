@@ -16,6 +16,14 @@ description = "Desktop floating lyrics with karaoke highlighting. MPRIS-powered,
 # ── Plugin-level Settings ───────────────────────────────────────────
 
 [[setting]]
+key = "debug_log"
+type = "bool"
+label_key = "settings.debug_log.label"
+description_key = "settings.debug_log.description"
+default = false
+advanced = true
+
+[[setting]]
 key = "player_allowlist"
 type = "string_list"
 label_key = "settings.player_allowlist.label"

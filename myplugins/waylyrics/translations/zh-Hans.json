@@ -6,6 +6,9 @@
   "intro": "前奏",
   "source_label": "歌词来源",
 
+  "settings.debug_log.label": "调试日志",
+  "settings.debug_log.description": "输出调试日志用于排查问题。",
+
   "shortcut.media.label": "打开媒体面板",
   "shortcut.selector.label": "打开歌词选择器",
 
