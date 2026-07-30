@@ -14,7 +14,8 @@ local playing = false
 local position = 0
 local cover = nil
 local coverRing = nil
-local showTranslation = false
+local showTranslation = true
+local track = nil
 
 local function getLineInfo()
   if not lyrics or #lyrics == 0 or not playing then return nil end
@@ -65,6 +66,7 @@ function update()
   playing = noctalia.state.get("playing") == true
   cover = noctalia.state.get("cover")
   coverRing = noctalia.state.get("cover_ring")
+  track = noctalia.state.get("track")
 
   if hideWhenPaused and not playing then
     barWidget.setVisible(false)
@@ -90,9 +92,23 @@ function update()
         text = lyricText, fontSize = 13, color = activeColor, maxLines = 1,
       })
     else
-      children[#children + 1] = ui.label({
-        text = noctalia.tr("cue_text"), fontSize = 13, color = inactiveColor, maxLines = 1,
-      })
+      local fallback = ""
+      if track then
+        local artist = track.artist or ""
+        local title = track.title or ""
+        if artist ~= "" or title ~= "" then
+          fallback = artist .. " - " .. title
+        end
+      end
+      if fallback ~= "" then
+        children[#children + 1] = ui.label({
+          text = fallback, fontSize = 13, color = inactiveColor, maxLines = 1,
+        })
+      else
+        children[#children + 1] = ui.label({
+          text = noctalia.tr("cue_text"), fontSize = 13, color = inactiveColor, maxLines = 1,
+        })
+      end
     end
   else
     renderPausedCover(children)
@@ -102,9 +118,23 @@ function update()
         text = line.text or "", fontSize = 13, color = inactiveColor, maxLines = 1,
       })
     else
-      children[#children + 1] = ui.label({
-        text = noctalia.tr("paused"), fontSize = 13, color = inactiveColor, maxLines = 1,
-      })
+      local fallback = ""
+      if track then
+        local artist = track.artist or ""
+        local title = track.title or ""
+        if artist ~= "" or title ~= "" then
+          fallback = artist .. " - " .. title
+        end
+      end
+      if fallback ~= "" then
+        children[#children + 1] = ui.label({
+          text = noctalia.tr("paused") .. ": " .. fallback, fontSize = 13, color = inactiveColor, maxLines = 1,
+        })
+      else
+        children[#children + 1] = ui.label({
+          text = noctalia.tr("paused"), fontSize = 13, color = inactiveColor, maxLines = 1,
+        })
+      end
     end
   end
 
@@ -121,4 +151,5 @@ position = noctalia.state.get("position") or 0
 playing = noctalia.state.get("playing") == true
 cover = noctalia.state.get("cover")
 coverRing = noctalia.state.get("cover_ring")
+track = noctalia.state.get("track")
 update()
