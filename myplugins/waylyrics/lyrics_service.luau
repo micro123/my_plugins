@@ -1014,7 +1014,11 @@ local function poll()
       if record ~= "" then
         local parts = {}
         for field in (record .. fieldSeparator):gmatch("(.-)" .. fieldSeparator) do
-          parts[#parts + 1] = field:gsub("^%s+", ""):gsub("%s+$", "")
+          if #field > 500 then
+            parts[#parts + 1] = field
+          else
+            parts[#parts + 1] = field:gsub("^%s+", ""):gsub("%s+$", "")
+          end
         end
         local player = {
           instance = parts[1] or "",
