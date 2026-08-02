@@ -3,6 +3,19 @@
 # The per-plugin plugin.toml stays authoritative; the host re-reads it on enable.
 
 [[plugin]]
+id = "tang/wallhaven-auto"
+name = "Wallhaven Auto-Rotate"
+version = "1.0.0"
+author = "tang"
+license = "MIT"
+icon = "photo"
+description = "Auto-rotating wallpaper from Wallhaven. Configurable tags, categories, purity, resolution, and aspect ratio."
+deprecated = false
+plugin_api = 14
+tags = ["wallpaper", "service", "bar", "panel"]
+dependencies = []
+
+[[plugin]]
 id = "tang/waylyrics"
 name = "Waylyrics"
 version = "1.0.0"

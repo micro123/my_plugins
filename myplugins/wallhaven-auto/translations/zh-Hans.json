@@ -1,0 +1,103 @@
+{
+  "notify": {
+    "applied": "壁纸已应用",
+    "failed": "壁纸轮换失败",
+    "saved": "壁纸已保存",
+    "save_failed": "保存失败",
+    "no_wallpaper": "还没有壁纸可保存",
+    "no_file": "壁纸文件不存在"
+  },
+  "status": {
+    "searching": "搜索中...",
+    "downloading": "下载中...",
+    "applying": "应用中...",
+    "error": "错误",
+    "disabled": "已关闭",
+    "idle": "等待中"
+  },
+  "widget": {
+    "title": "Wallhaven 自动轮换",
+    "tag_label": "标签"
+  },
+  "shortcut": {
+    "label": "自动轮换"
+  },
+  "panel": {
+    "status": "状态",
+    "auto_rotate": "自动轮换",
+    "next_rotation": "下次轮换",
+    "current_wallpaper": "当前壁纸",
+    "resolution": "分辨率",
+    "no_wallpaper": "暂无壁纸 — 等待首次轮换。",
+    "rotate_now": "立即轮换",
+    "save": "保存到图片",
+    "open": "打开",
+    "copy_link": "复制",
+    "custom_tag_placeholder": "自定义标签（仅一次）…"
+  },
+  "settings": {
+    "debug_log": {
+      "label": "调试日志",
+      "description": "将调试信息写入 Noctalia 日志。"
+    },
+    "api_key": {
+      "label": "API 密钥",
+      "description": "可选的 Wallhaven API 密钥，用于提高请求频率上限和访问 NSFW 内容。"
+    },
+    "interval_minutes": {
+      "label": "轮换间隔（分钟）",
+      "description": "壁纸轮换的时间间隔。最小 15 分钟。"
+    },
+    "tags": {
+      "label": "搜索标签",
+      "description": "在 Wallhaven 上搜索的标签列表。每次轮换随机选取一个。"
+    },
+    "category_general": {
+      "label": "General"
+    },
+    "category_anime": {
+      "label": "Anime"
+    },
+    "category_people": {
+      "label": "People"
+    },
+    "purity_sfw": {
+      "label": "SFW"
+    },
+    "purity_sketchy": {
+      "label": "Sketchy"
+    },
+    "purity_nsfw": {
+      "label": "NSFW",
+      "description": "需要配置 API 密钥。未配置密钥时无视此选项。"
+    },
+    "resolution_atleast": {
+      "label": "最低分辨率",
+      "description": "壁纸最低分辨率，例如 1920x1080。"
+    },
+    "ratio": {
+      "label": "宽高比",
+      "description": "按宽高比筛选壁纸。",
+      "options": {
+        "any": "不限",
+        "landscape": "宽屏",
+        "portrait": "竖屏",
+        "16x9": "16:9",
+        "16x10": "16:10",
+        "21x9": "21:9",
+        "32x9": "32:9",
+        "9x16": "9:16",
+        "10x16": "10:16",
+        "1x1": "1:1",
+        "3x2": "3:2",
+        "4x3": "4:3"
+      }
+    },
+    "widget": {
+      "show_countdown": {
+        "label": "显示倒计时",
+        "description": "在状态栏组件上显示距离下次轮换的倒计时。"
+      }
+    }
+  }
+}

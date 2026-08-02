@@ -1,0 +1,103 @@
+{
+  "notify": {
+    "applied": "Wallpaper Applied",
+    "failed": "Wallpaper Rotation Failed",
+    "saved": "Wallpaper Saved",
+    "save_failed": "Save Failed",
+    "no_wallpaper": "No wallpaper to save yet",
+    "no_file": "Wallpaper file not found"
+  },
+  "status": {
+    "searching": "Searching...",
+    "downloading": "Downloading...",
+    "applying": "Applying...",
+    "error": "Error",
+    "disabled": "Off",
+    "idle": "Idle"
+  },
+  "widget": {
+    "title": "Wallhaven Auto-Rotate",
+    "tag_label": "Tag"
+  },
+  "shortcut": {
+    "label": "Auto-Rotate"
+  },
+  "panel": {
+    "status": "Status",
+    "auto_rotate": "Auto-Rotate",
+    "next_rotation": "Next rotation",
+    "current_wallpaper": "Current Wallpaper",
+    "resolution": "Resolution",
+    "no_wallpaper": "No wallpaper yet — wait for the first rotation.",
+    "rotate_now": "Rotate Now",
+    "save": "Save to Pictures",
+    "open": "Open",
+    "copy_link": "Copy",
+    "custom_tag_placeholder": "Custom tag (one-shot)…"
+  },
+  "settings": {
+    "debug_log": {
+      "label": "Debug Logging",
+      "description": "Write debug messages to the Noctalia log."
+    },
+    "api_key": {
+      "label": "API Key",
+      "description": "Optional Wallhaven API key for higher rate limits and NSFW access."
+    },
+    "interval_minutes": {
+      "label": "Rotation Interval (minutes)",
+      "description": "How often to rotate the wallpaper. Minimum 15 minutes."
+    },
+    "tags": {
+      "label": "Search Tags",
+      "description": "Tags to search for on Wallhaven. One random tag is picked per rotation."
+    },
+    "category_general": {
+      "label": "General"
+    },
+    "category_anime": {
+      "label": "Anime"
+    },
+    "category_people": {
+      "label": "People"
+    },
+    "purity_sfw": {
+      "label": "SFW"
+    },
+    "purity_sketchy": {
+      "label": "Sketchy"
+    },
+    "purity_nsfw": {
+      "label": "NSFW",
+      "description": "Requires an API key. Ignored if no key is configured."
+    },
+    "resolution_atleast": {
+      "label": "Min Resolution",
+      "description": "Minimum wallpaper resolution, e.g. 1920x1080."
+    },
+    "ratio": {
+      "label": "Aspect Ratio",
+      "description": "Filter wallpapers by aspect ratio.",
+      "options": {
+        "any": "Any",
+        "landscape": "Landscape",
+        "portrait": "Portrait",
+        "16x9": "16:9",
+        "16x10": "16:10",
+        "21x9": "21:9",
+        "32x9": "32:9",
+        "9x16": "9:16",
+        "10x16": "10:16",
+        "1x1": "1:1",
+        "3x2": "3:2",
+        "4x3": "4:3"
+      }
+    },
+    "widget": {
+      "show_countdown": {
+        "label": "Show Countdown",
+        "description": "Display time until next rotation in the bar widget."
+      }
+    }
+  }
+}

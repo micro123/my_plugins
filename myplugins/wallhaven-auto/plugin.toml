@@ -1,0 +1,155 @@
+# Wallhaven Auto-Rotate — automatic wallpaper rotation powered by Wallhaven API.
+#
+# A headless service periodically searches Wallhaven with a random tag, downloads
+# the first result, and applies it to all displays. Manual rotation via bar widget
+# click; toggle auto-rotation via control-center shortcut.
+
+id = "tang/wallhaven-auto"
+name = "Wallhaven Auto-Rotate"
+version = "1.0.0"
+plugin_api = 14
+author = "tang"
+license = "MIT"
+dependencies = []
+tags = ["wallpaper", "service", "bar"]
+icon = "photo"
+description = "Auto-rotating wallpaper from Wallhaven. Configurable tags, categories, purity, resolution, and aspect ratio."
+
+# ── Plugin-level Settings ───────────────────────────────────────────
+
+[[setting]]
+key = "debug_log"
+type = "bool"
+label_key = "settings.debug_log.label"
+description_key = "settings.debug_log.description"
+default = false
+advanced = true
+
+[[setting]]
+key = "api_key"
+type = "string"
+label_key = "settings.api_key.label"
+description_key = "settings.api_key.description"
+default = ""
+advanced = true
+
+[[setting]]
+key = "interval_minutes"
+type = "int"
+label_key = "settings.interval_minutes.label"
+description_key = "settings.interval_minutes.description"
+default = 30
+min = 15
+max = 1440
+
+[[setting]]
+key = "tags"
+type = "string_list"
+label_key = "settings.tags.label"
+description_key = "settings.tags.description"
+default = ["nature", "landscape", "city", "abstract", "space"]
+
+# ── Categories — three bool toggles ──────────────────────────────────
+
+[[setting]]
+key = "category_general"
+type = "bool"
+label_key = "settings.category_general.label"
+default = true
+
+[[setting]]
+key = "category_anime"
+type = "bool"
+label_key = "settings.category_anime.label"
+default = true
+
+[[setting]]
+key = "category_people"
+type = "bool"
+label_key = "settings.category_people.label"
+default = true
+
+# ── Purity — three bool toggles (nsfw requires API key) ─────────────
+
+[[setting]]
+key = "purity_sfw"
+type = "bool"
+label_key = "settings.purity_sfw.label"
+default = true
+
+[[setting]]
+key = "purity_sketchy"
+type = "bool"
+label_key = "settings.purity_sketchy.label"
+default = false
+
+[[setting]]
+key = "purity_nsfw"
+type = "bool"
+label_key = "settings.purity_nsfw.label"
+description_key = "settings.purity_nsfw.description"
+default = false
+
+# ── Resolution ───────────────────────────────────────────────────────
+
+[[setting]]
+key = "resolution_atleast"
+type = "string"
+label_key = "settings.resolution_atleast.label"
+description_key = "settings.resolution_atleast.description"
+default = "1920x1080"
+
+# ── Aspect Ratio ─────────────────────────────────────────────────────
+
+[[setting]]
+key = "ratio"
+type = "select"
+label_key = "settings.ratio.label"
+description_key = "settings.ratio.description"
+default = "any"
+options = [
+  { value = "any",        label_key = "settings.ratio.options.any" },
+  { value = "landscape",  label_key = "settings.ratio.options.landscape" },
+  { value = "portrait",   label_key = "settings.ratio.options.portrait" },
+  { value = "16x9",       label_key = "settings.ratio.options.16x9" },
+  { value = "16x10",      label_key = "settings.ratio.options.16x10" },
+  { value = "21x9",       label_key = "settings.ratio.options.21x9" },
+  { value = "32x9",       label_key = "settings.ratio.options.32x9" },
+  { value = "9x16",       label_key = "settings.ratio.options.9x16" },
+  { value = "10x16",      label_key = "settings.ratio.options.10x16" },
+  { value = "1x1",        label_key = "settings.ratio.options.1x1" },
+  { value = "3x2",        label_key = "settings.ratio.options.3x2" },
+  { value = "4x3",        label_key = "settings.ratio.options.4x3" },
+]
+
+# ── Entries ──────────────────────────────────────────────────────────
+
+[[service]]
+id = "service"
+entry = "service.luau"
+
+[[widget]]
+id = "wallhaven-auto"
+entry = "widget.luau"
+
+  [widget.actions]
+  middle = "none"
+
+  [[widget.setting]]
+  key = "show_countdown"
+  type = "bool"
+  label_key = "settings.widget.show_countdown.label"
+  description_key = "settings.widget.show_countdown.description"
+  default = true
+
+[[panel]]
+id = "info"
+entry = "panel.luau"
+width = 320
+height = 560
+placement = "floating"
+position = "center"
+
+[[shortcut]]
+id = "toggle"
+entry = "shortcut.luau"
