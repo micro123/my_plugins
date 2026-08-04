@@ -1,12 +1,14 @@
 --!nonstrict
 -- Wallhaven Auto-Rotate — headless service.
--- Periodically searches Wallhaven with a random tag, downloads the first
--- result, and applies it to all displays.
+-- Periodically searches Wallhaven with a random tag, picks a random
+-- result (with dedup against recently used IDs), and applies it to all displays.
 
 local API_BASE = "https://wallhaven.cc/api/v1"
 local TEMP_DIR_NAME = "wallhaven-auto"
 local CHECK_INTERVAL_MS = 1000
 local MAX_RETRY_TAGS = 3
+local MAX_RECENT_IDS = 50
+local SEED_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 noctalia.setUpdateInterval(CHECK_INTERVAL_MS)
 
@@ -75,7 +77,64 @@ end
 
 local lastWallpaperPath = ""
 
+-- ── Recently-Used Wallpaper Dedup ────────────────────────────────────
+
+local recentIds = {}     -- set: id → true
+local recentOrder = {}   -- ordered list for FIFO eviction
+
+local function recentFilePath()
+  local dir = noctalia.pluginDataDir()
+  if type(dir) ~= "string" then return nil end
+  return dir .. "/recent_ids.json"
+end
+
+local function loadRecentIds()
+  local path = recentFilePath()
+  if not path then return end
+  local content = noctalia.readFile(path)
+  if type(content) ~= "string" then return end
+  local decoded = noctalia.json.decode(content)
+  if type(decoded) ~= "table" then return end
+  for _, id in ipairs(decoded) do
+    if type(id) == "string" and not recentIds[id] then
+      recentIds[id] = true
+      table.insert(recentOrder, id)
+    end
+  end
+  -- Trim if persisted list exceeds max
+  while #recentOrder > MAX_RECENT_IDS do
+    recentIds[table.remove(recentOrder, 1)] = nil
+  end
+  logDbg("loaded " .. tostring(#recentOrder) .. " recent IDs")
+end
+
+local function saveRecentIds()
+  local path = recentFilePath()
+  if not path then return end
+  local ok = noctalia.writeFile(path, noctalia.json.encode(recentOrder))
+  if not ok then logDbg("failed to persist recent IDs") end
+end
+
+local function markRecent(id)
+  local idStr = tostring(id)
+  if recentIds[idStr] then return end  -- already tracked
+  recentIds[idStr] = true
+  table.insert(recentOrder, idStr)
+  while #recentOrder > MAX_RECENT_IDS do
+    recentIds[table.remove(recentOrder, 1)] = nil
+  end
+  saveRecentIds()
+end
+
 -- ── URL Builder ─────────────────────────────────────────────────────
+
+local function generateSeed()
+  local chars = {}
+  for _ = 1, 6 do
+    table.insert(chars, SEED_CHARS:sub(math.random(1, #SEED_CHARS), math.random(1, #SEED_CHARS)))
+  end
+  return table.concat(chars)
+end
 
 local function buildSearchUrl(tag)
   local params = {
@@ -84,6 +143,7 @@ local function buildSearchUrl(tag)
     "sorting=random",
     "order=desc",
     "page=1",
+    "seed=" .. generateSeed(),
   }
 
   local atleast = noctalia.getConfig("resolution_atleast")
@@ -239,8 +299,28 @@ local function rotate(customTag)
         return
       end
 
-      logDbg("doSearch: found " .. tostring(#decoded.data) .. " results for tag=" .. tagLabel .. ", downloading first")
-      downloadAndApply(decoded.data[1], tag)
+      logDbg("doSearch: found " .. tostring(#decoded.data) .. " results for tag=" .. tagLabel)
+
+      -- Build a candidate list, excluding recently-used IDs
+      local candidates = {}
+      for _, item in ipairs(decoded.data) do
+        if not recentIds[tostring(item.id)] then
+          table.insert(candidates, item)
+        end
+      end
+      -- If everything was recently used, fall back to the full list
+      if #candidates == 0 then
+        logDbg("doSearch: all results are recent, using full list")
+        candidates = decoded.data
+      else
+        logDbg("doSearch: " .. tostring(#candidates) .. " non-recent candidates out of " .. tostring(#decoded.data))
+      end
+
+      -- Pick a random wallpaper from the candidates
+      local pick = candidates[math.random(1, #candidates)]
+      logDbg("doSearch: picked id=" .. tostring(pick.id))
+      markRecent(pick.id)
+      downloadAndApply(pick, tag)
     end)
   end
 
@@ -328,6 +408,7 @@ end
 
 -- ── Boot ────────────────────────────────────────────────────────────
 
+loadRecentIds()
 noctalia.state.set("wallhaven_auto_enabled", enabled)
 
 -- Only rotate immediately on first-ever load; skip if state + file both intact
