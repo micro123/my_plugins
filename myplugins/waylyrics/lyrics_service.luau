@@ -15,7 +15,12 @@ local selectedCandidateCache = {}
 local lastTrackKey = ""
 local inFlight = nil
 local fetchGeneration = 0
+local fetchStartedMs = 0
 local pollInFlight = false
+local pollGeneration = 0
+local pollStartedMs = 0
+local POLL_TIMEOUT_MS = 5000
+local FETCH_TIMEOUT_MS = 15000
 local coverInFlight = nil
 local coverFetchGeneration = 0
 local maxCoverFiles = 80
@@ -167,6 +172,7 @@ local function clearPlayerState()
   mprisCoverFailed = false
   lastTrackKey = ""
   inFlight = nil
+  fetchStartedMs = 0
   coverInFlight = nil
   noctalia.state.set("player_instance", nil)
   noctalia.state.set("player_name", nil)
@@ -444,6 +450,7 @@ local function fetchLyricsNetEase(track, embeddedLyrics, preferredSource)
   fetchGeneration = fetchGeneration + 1
   local flight = tk .. "|" .. tostring(fetchGeneration)
   inFlight = flight
+  fetchStartedMs = noctalia.nowMs()
   publishCandidates(tk, hasPreference, nil, hasPreference and preferredSource or nil)
 
   local collected = {}  -- all successful source results in auto mode
@@ -859,7 +866,7 @@ local function fetchLyricsNetEase(track, embeddedLyrics, preferredSource)
           else
             onSourceResult(nil)
           end
-        end, 30000)
+        end, FETCH_TIMEOUT_MS)
         if not started then
           noctalia.removeFile(rp)
           onSourceResult(nil)
@@ -996,11 +1003,20 @@ maybeApplyCover = function(track, artUrl)
 end
 
 local function poll()
-  if pollInFlight then return end
+  if pollInFlight then
+    if noctalia.nowMs() - pollStartedMs <= POLL_TIMEOUT_MS then return end
+    logDebug("player poll timed out; restarting")
+    pollGeneration = pollGeneration + 1
+    pollInFlight = false
+  end
+  pollGeneration = pollGeneration + 1
+  local generation = pollGeneration
   pollInFlight = true
+  pollStartedMs = noctalia.nowMs()
   local cmd = [[playerctl --all-players metadata --format $'{{playerInstance}}\x1f{{playerName}}\x1f{{lc(status)}}\x1f{{title}}\x1f{{artist}}\x1f{{album}}\x1f{{position}}\x1f{{mpris:length}}\x1f{{mpris:artUrl}}\x1f{{mpris:trackid}}\x1f{{xesam:url}}\x1f{{xesam:asText}}\x1e' 2>/dev/null]]
 
   local started = noctalia.runAsync(cmd, function(r)
+    if generation ~= pollGeneration then return end
     pollInFlight = false
     if r.exitCode ~= 0 or not r.stdout or r.stdout == "" then
       clearPlayerState()
@@ -1138,14 +1154,30 @@ local function poll()
         generateRing(coverPath, progress, tk)
       end
     end
-  end)
-  if not started then pollInFlight = false end
+  end, POLL_TIMEOUT_MS)
+  if not started and generation == pollGeneration then pollInFlight = false end
 end
 
 local pollElapsedMs = pollIntervalMs
 
 function update()
   if lyricsSource == "external" then return end
+
+  if inFlight and fetchStartedMs > 0 and noctalia.nowMs() - fetchStartedMs > FETCH_TIMEOUT_MS then
+    logDebug("lyrics fetch timed out; retrying current track")
+    fetchGeneration = fetchGeneration + 1
+    inFlight = nil
+    fetchStartedMs = 0
+    if currentTrack and trackKey(currentTrack) == lastTrackKey then
+      publishCandidates(lastTrackKey)
+      pendingFetch = {
+        track = currentTrack,
+        embeddedLyrics = currentEmbeddedLyrics,
+        artUrl = currentArtUrl,
+        sinceMs = noctalia.nowMs(),
+      }
+    end
+  end
 
   -- Fire pending fetch after debounce
   if pendingFetch then
