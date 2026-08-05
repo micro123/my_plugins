@@ -88,10 +88,6 @@ noctalia.state.watch("wallhaven_auto_current", function(v)
   if type(v) == "table" then current = v end
 end)
 
-function update()
-  render()
-end
-
 function onClick()
   noctalia.togglePanel("tang/wallhaven-auto:info")
 end
@@ -113,7 +109,12 @@ function onMiddleClick()
   end
   local ext = current.file_ext
   if type(ext) ~= "string" or ext == "" then ext = "jpg" end
-  local dest = noctalia.expandPath("~/Pictures/Wallhaven-" .. wId .. "." .. ext)
+  local picturesDir = noctalia.expandPath("~/Pictures")
+  if not noctalia.mkdirAll(picturesDir) then
+    noctalia.notifyError(noctalia.tr("notify.save_failed"), picturesDir)
+    return
+  end
+  local dest = picturesDir .. "/Wallhaven-" .. wId .. "." .. ext
   noctalia.runAsync("cp " .. shellQuote(src) .. " " .. shellQuote(dest), function(r)
     if r.exitCode == 0 then
       noctalia.notify(noctalia.tr("notify.saved"), dest)

@@ -8,6 +8,8 @@ local TEMP_DIR_NAME = "wallhaven-auto"
 local CHECK_INTERVAL_MS = 1000
 local MAX_RETRY_TAGS = 3
 local MAX_RECENT_IDS = 50
+local ROTATION_TIMEOUT_MS = 60000
+local RETRY_DELAYS_MS = { 60000, 300000, 900000, 1800000 }
 local SEED_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 noctalia.setUpdateInterval(CHECK_INTERVAL_MS)
@@ -16,6 +18,9 @@ noctalia.setUpdateInterval(CHECK_INTERVAL_MS)
 
 local enabled = true
 local rotating = false
+local rotationGeneration = 0
+local rotationStartedMs = 0
+local consecutiveFailures = 0
 local nextAtMs = 0
 local lastErrorNotificationDate = ""
 
@@ -27,10 +32,6 @@ local function logDbg(msg)
 end
 
 -- ── Helpers ─────────────────────────────────────────────────────────
-
-local function shellQuote(s)
-  return "'" .. tostring(s):gsub("'", "'\\''") .. "'"
-end
 
 local function apiKey()
   local key = noctalia.getConfig("api_key")
@@ -88,6 +89,30 @@ local function recentFilePath()
   return dir .. "/recent_ids.json"
 end
 
+local function enabledFilePath()
+  local dir = noctalia.pluginDataDir()
+  if type(dir) ~= "string" then return nil end
+  return dir .. "/enabled.json"
+end
+
+local function loadEnabled()
+  local path = enabledFilePath()
+  if not path then return end
+  local content = noctalia.readFile(path)
+  if type(content) ~= "string" then return end
+  local decoded = noctalia.json.decode(content)
+  if type(decoded) == "boolean" then enabled = decoded end
+end
+
+local function saveEnabled()
+  local path = enabledFilePath()
+  if not path then return end
+  local encoded = noctalia.json.encode(enabled)
+  if not encoded or not noctalia.writeFile(path, encoded) then
+    logDbg("failed to persist enabled state")
+  end
+end
+
 local function loadRecentIds()
   local path = recentFilePath()
   if not path then return end
@@ -131,7 +156,8 @@ end
 local function generateSeed()
   local chars = {}
   for _ = 1, 6 do
-    table.insert(chars, SEED_CHARS:sub(math.random(1, #SEED_CHARS), math.random(1, #SEED_CHARS)))
+    local index = math.random(1, #SEED_CHARS)
+    table.insert(chars, SEED_CHARS:sub(index, index))
   end
   return table.concat(chars)
 end
@@ -175,9 +201,18 @@ end
 
 -- ── Rotation ────────────────────────────────────────────────────────
 
-local function failAndRelease(msg)
+local function rotationIsCurrent(generation)
+  return rotating and generation == rotationGeneration
+end
+
+local function failAndRelease(msg, generation)
+  if generation and not rotationIsCurrent(generation) then return end
   logDbg("FAIL: " .. msg)
   rotating = false
+  rotationStartedMs = 0
+  consecutiveFailures = consecutiveFailures + 1
+  local retryIndex = math.min(consecutiveFailures, #RETRY_DELAYS_MS)
+  nextAtMs = noctalia.nowMs() + RETRY_DELAYS_MS[retryIndex]
   publishStatus("error", nil, msg)
   local date = os.date("%Y-%m-%d")
   if lastErrorNotificationDate ~= date then
@@ -186,15 +221,19 @@ local function failAndRelease(msg)
   end
 end
 
-local function completeAndRelease(tag, wallpaper, dest, ext)
+local function completeAndRelease(tag, wallpaper, dest, ext, generation)
+  if not rotationIsCurrent(generation) then return end
   logDbg("OK: rotation complete, tag=" .. (tag or "?") .. " dest=" .. dest)
   rotating = false
+  rotationStartedMs = 0
+  consecutiveFailures = 0
 
   -- Clean up old wallpaper file
   if lastWallpaperPath ~= "" and lastWallpaperPath ~= dest then
     noctalia.removeFile(lastWallpaperPath)
   end
   lastWallpaperPath = dest
+  markRecent(wallpaper and wallpaper.id or "unknown")
   local intervalMin = tonumber(noctalia.getConfig("interval_minutes")) or 30
   nextAtMs = noctalia.nowMs() + intervalMin * 60 * 1000
   publishStatus("idle", nil, nil)
@@ -222,7 +261,10 @@ end
 
 local function rotate(customTag)
   if rotating then logDbg("rotate: already rotating, skip"); return end
+  rotationGeneration = rotationGeneration + 1
+  local generation = rotationGeneration
   rotating = true
+  rotationStartedMs = noctalia.nowMs()
 
   if customTag and customTag ~= "" then
     logDbg("rotate: custom tag=" .. customTag)
@@ -232,9 +274,10 @@ local function rotate(customTag)
 
   -- Download + apply
   local function downloadAndApply(wallpaper, tag)
+    if not rotationIsCurrent(generation) then return end
     local imageUrl = wallpaper.path
     if type(imageUrl) ~= "string" or imageUrl == "" then
-      failAndRelease("Wallpaper has no image URL")
+      failAndRelease("Wallpaper has no image URL", generation)
       return
     end
 
@@ -245,50 +288,56 @@ local function rotate(customTag)
     logDbg("downloadAndApply: downloading " .. dest .. " from " .. imageUrl:sub(1, 80) .. "...")
     publishStatus("downloading", tag)
 
-    noctalia.runAsync("mkdir -p " .. shellQuote(tempDir()), function(mkdirRes)
-      if mkdirRes == nil or mkdirRes.exitCode ~= 0 then
-        logDbg("downloadAndApply: mkdir failed")
-        failAndRelease("Failed to create temp directory")
+    local dirOk = noctalia.mkdirAll(tempDir())
+    if not dirOk then
+      logDbg("downloadAndApply: mkdir failed")
+      failAndRelease("Failed to create temp directory", generation)
+      return
+    end
+
+    local started = noctalia.download(imageUrl, dest, function(ok)
+      if not rotationIsCurrent(generation) then return end
+      if not ok then
+        logDbg("downloadAndApply: download failed")
+        failAndRelease("Download failed", generation)
         return
       end
 
-      local started = noctalia.download(imageUrl, dest, function(ok)
-        if not ok then
-          logDbg("downloadAndApply: download failed")
-          failAndRelease("Download failed")
-          return
-        end
-
-        logDbg("downloadAndApply: download ok, applying")
-        publishStatus("applying", tag)
-        noctalia.setWallpaper(dest)
-        completeAndRelease(tag, wallpaper, dest, ext)
-      end)
-
-      if not started then
-        logDbg("downloadAndApply: download not started")
-        failAndRelease("Could not start download")
-      end
+      logDbg("downloadAndApply: download ok, applying")
+      publishStatus("applying", tag)
+      noctalia.setWallpaper(dest)
+      completeAndRelease(tag, wallpaper, dest, ext, generation)
     end)
+
+    if not started then
+      logDbg("downloadAndApply: download not started")
+      failAndRelease("Could not start download", generation)
+    end
   end
 
   -- Search with retry chain
   local function doSearch(attemptTags, index)
+    if not rotationIsCurrent(generation) then return end
     if index > #attemptTags then
-      failAndRelease("No wallpapers found for any tag")
+      failAndRelease("No wallpapers found for any tag", generation)
       return
     end
 
-    local tag = attemptTags[index]
+    local tag = attemptTags[index].tag
     local tagLabel = tag or "(no query)"
     logDbg("doSearch: trying tag=" .. tagLabel)
     publishStatus("searching", tag)
+    noctalia.notify(
+      noctalia.tr("notify.searching"),
+      noctalia.tr("widget.tag_label") .. ": " .. (tag or noctalia.tr("notify.no_query"))
+    )
 
     local url = buildSearchUrl(tag)
     noctalia.http({ url = url, headers = httpHeaders() }, function(res)
+      if not rotationIsCurrent(generation) then return end
       if not res.ok then
         logDbg("doSearch: HTTP failed status=" .. tostring(res.status) .. " for tag=" .. tagLabel)
-        failAndRelease("Search request failed (HTTP " .. tostring(res.status) .. ")")
+        failAndRelease("Search request failed (HTTP " .. tostring(res.status) .. ")", generation)
         return
       end
 
@@ -319,7 +368,6 @@ local function rotate(customTag)
       -- Pick a random wallpaper from the candidates
       local pick = candidates[math.random(1, #candidates)]
       logDbg("doSearch: picked id=" .. tostring(pick.id))
-      markRecent(pick.id)
       downloadAndApply(pick, tag)
     end)
   end
@@ -328,11 +376,11 @@ local function rotate(customTag)
   local attemptTags = {}
   if customTag and customTag ~= "" then
     -- Custom tag: use it directly, no shuffle, no fallback
-    table.insert(attemptTags, customTag)
+    table.insert(attemptTags, { tag = customTag })
   else
     local tags = noctalia.getConfig("tags")
     if type(tags) == "table" and #tags > 0 then
-      for _, t in ipairs(tags) do table.insert(attemptTags, t) end
+      for _, t in ipairs(tags) do table.insert(attemptTags, { tag = t }) end
       -- Fisher-Yates shuffle
       for i = #attemptTags, 2, -1 do
         local j = math.random(i)
@@ -343,7 +391,7 @@ local function rotate(customTag)
       end
     end
     -- nil sentinel: no-query fallback
-    table.insert(attemptTags, nil)
+    table.insert(attemptTags, { tag = nil })
   end
 
   doSearch(attemptTags, 1)
@@ -362,9 +410,13 @@ function update()
   end
   noctalia.state.set("wallhaven_auto_status", s)
 
+  local now = noctalia.nowMs()
+  if rotating and rotationStartedMs > 0 and now - rotationStartedMs > ROTATION_TIMEOUT_MS then
+    failAndRelease("Rotation timed out", rotationGeneration)
+  end
+
   if not enabled then return end
 
-  local now = noctalia.nowMs()
   if nextAtMs == 0 or now >= nextAtMs then
     rotate()
   end
@@ -383,12 +435,18 @@ noctalia.state.watch("wallhaven_auto_command", function(cmd)
   elseif cmd.action == "toggle" then
     logDbg("command: toggle -> " .. tostring(not enabled))
     enabled = not enabled
+    saveEnabled()
     noctalia.state.set("wallhaven_auto_enabled", enabled)
     if enabled then
       local intervalMin = tonumber(noctalia.getConfig("interval_minutes")) or 30
       nextAtMs = noctalia.nowMs() + intervalMin * 60 * 1000
       publishStatus("idle", nil, nil)
     else
+      if rotating then
+        rotationGeneration = rotationGeneration + 1
+        rotating = false
+        rotationStartedMs = 0
+      end
       publishStatus("idle", nil, nil)
     end
   end
@@ -399,16 +457,19 @@ end)
 function onConfigChanged()
   debugLog = noctalia.getConfig("debug_log") == true
   logDbg("onConfigChanged")
-  if enabled then
+  if enabled and not rotating then
     local intervalMin = tonumber(noctalia.getConfig("interval_minutes")) or 30
     nextAtMs = noctalia.nowMs() + intervalMin * 60 * 1000
+    publishStatus("idle", nil, nil)
+  elseif not rotating then
+    publishStatus("idle", nil, nil)
   end
-  publishStatus("idle", nil, nil)
 end
 
 -- ── Boot ────────────────────────────────────────────────────────────
 
 loadRecentIds()
+loadEnabled()
 noctalia.state.set("wallhaven_auto_enabled", enabled)
 
 -- Only rotate immediately on first-ever load; skip if state + file both intact
@@ -417,6 +478,7 @@ local hasState = type(existing) == "table" and type(existing.id) == "string" and
 local fileOk = hasState and type(existing.file_path) == "string"
   and existing.file_path ~= "" and noctalia.fileExists(existing.file_path)
 if hasState and fileOk then
+  lastWallpaperPath = existing.file_path
   local intervalMin = tonumber(noctalia.getConfig("interval_minutes")) or 30
   nextAtMs = noctalia.nowMs() + intervalMin * 60 * 1000
   publishStatus("idle", nil, nil)

@@ -5,7 +5,9 @@
     "saved": "壁纸已保存",
     "save_failed": "保存失败",
     "no_wallpaper": "还没有壁纸可保存",
-    "no_file": "壁纸文件不存在"
+    "no_file": "壁纸文件不存在",
+    "searching": "正在搜索 Wallhaven",
+    "no_query": "无关键词"
   },
   "status": {
     "searching": "搜索中...",

@@ -5,7 +5,9 @@
     "saved": "Wallpaper Saved",
     "save_failed": "Save Failed",
     "no_wallpaper": "No wallpaper to save yet",
-    "no_file": "Wallpaper file not found"
+    "no_file": "Wallpaper file not found",
+    "searching": "Searching Wallhaven",
+    "no_query": "No query"
   },
   "status": {
     "searching": "Searching...",
