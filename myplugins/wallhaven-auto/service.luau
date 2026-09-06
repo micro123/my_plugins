@@ -22,6 +22,7 @@ local rotationStartedMs = 0
 local consecutiveFailures = 0
 local nextAtMs = 0
 local lastErrorNotificationDate = ""
+local activeWallpaperAlias = ""
 
 -- ── Debug Log ───────────────────────────────────────────────────────
 
@@ -31,6 +32,10 @@ local function logDbg(msg)
 end
 
 -- ── Helpers ─────────────────────────────────────────────────────────
+
+local function shellQuote(value)
+  return "'" .. tostring(value):gsub("'", "'\\''") .. "'"
+end
 
 local function apiKey()
   local key = noctalia.getConfig("api_key")
@@ -72,6 +77,19 @@ local function wallpaperDir()
   if type(dir) == "string" and dir ~= "" then
     return dir .. "/wallpapers"
   end
+  return nil
+end
+
+local function wallpaperAliasDir()
+  local runtimeDir = noctalia.getenv("XDG_RUNTIME_DIR")
+  if type(runtimeDir) == "string" and runtimeDir ~= "" then
+    local dir = runtimeDir .. "/noctalia-wallhaven-auto"
+    if noctalia.mkdirAll(dir) then return dir end
+  end
+
+  local user = tostring(noctalia.getenv("USER") or "user"):gsub("[^a-zA-Z0-9._-]", "-")
+  local dir = "/tmp/noctalia-wallhaven-auto-" .. user
+  if noctalia.mkdirAll(dir) then return dir end
   return nil
 end
 
@@ -164,6 +182,19 @@ local function cleanupWallpaperDir(keepPath)
   end
 end
 
+local function cleanupAliasDir(dir, keepAlias)
+  local entries = noctalia.listDir(dir)
+  if type(entries) ~= "table" then return end
+
+  for _, name in ipairs(entries) do
+    local path = dir .. "/" .. name
+    if path ~= keepAlias then
+      local info = noctalia.fileInfo(path)
+      if info and not info.isDir then noctalia.removeFile(path) end
+    end
+  end
+end
+
 local function moveCurrentToPersistentStorage(current)
   if not currentFileExists(current) then return nil end
 
@@ -215,6 +246,46 @@ local function promoteDownload(stagingPath, destination)
 
   if hadPrevious then noctalia.removeFile(backupPath) end
   return true
+end
+
+local function applyWallpaper(path, wallpaperId, onApplied)
+  -- The real image intentionally keeps a stable name to bound storage. Give
+  -- Noctalia a unique, existing symlink so its texture cache sees a new source
+  -- while persistence and "Save to Pictures" keep using the canonical path.
+  local dir = wallpaperAliasDir()
+  if not dir then
+    if onApplied then onApplied(false) end
+    return
+  end
+
+  local id = tostring(wallpaperId or "unknown"):gsub("[^a-zA-Z0-9._-]", "-")
+  local ext = path:match("%.([a-zA-Z0-9]+)$") or "jpg"
+  local alias = dir .. "/.wallpaper-source-" .. id .. "-" .. tostring(noctalia.nowMs()) .. "." .. ext
+  noctalia.removeFile(alias)
+
+  local command = "ln -s " .. shellQuote(path) .. " " .. shellQuote(alias)
+  local started = noctalia.runAsync(command, function(result)
+    if result.exitCode ~= 0 or not noctalia.fileExists(alias) then
+      noctalia.removeFile(alias)
+      logDbg("failed to create wallpaper source alias")
+      if onApplied then onApplied(false) end
+      return
+    end
+
+    local previousAlias = activeWallpaperAlias
+    activeWallpaperAlias = alias
+    noctalia.setWallpaper(alias)
+    cleanupWallpaperDir(path)
+    cleanupAliasDir(dir, alias)
+    if previousAlias ~= "" and previousAlias ~= alias then noctalia.removeFile(previousAlias) end
+    logDbg("applied wallpaper through " .. alias)
+    if onApplied then onApplied(true) end
+  end, 5000)
+
+  if not started then
+    logDbg("could not start wallpaper source alias creation")
+    if onApplied then onApplied(false) end
+  end
 end
 
 local function loadRecentIds()
@@ -423,8 +494,14 @@ local function rotate(customTag)
 
       logDbg("downloadAndApply: download promoted to " .. dest .. ", applying")
       publishStatus("applying", tag)
-      noctalia.setWallpaper(dest)
-      completeAndRelease(tag, wallpaper, dest, ext, generation)
+      applyWallpaper(dest, wallpaper.id, function(applied)
+        if not rotationIsCurrent(generation) then return end
+        if not applied then
+          failAndRelease("Failed to prepare wallpaper for display", generation)
+          return
+        end
+        completeAndRelease(tag, wallpaper, dest, ext, generation)
+      end)
     end)
 
     if not started then
@@ -570,6 +647,22 @@ noctalia.state.watch("wallhaven_auto_command", function(cmd)
   end
 end)
 
+function onIpc(event, payload)
+  if event == "rotate" then
+    local tag = nil
+    if type(payload) == "string" then
+      local trimmed = noctalia.string.trim(payload)
+      if trimmed ~= "" then tag = trimmed end
+    end
+    logDbg("ipc: rotate" .. (tag and (" tag=" .. tag) or ""))
+    nextAtMs = 0
+    rotate(tag)
+  elseif event == "toggle" then
+    logDbg("ipc: toggle")
+    noctalia.state.set("wallhaven_auto_command", { action = "toggle" })
+  end
+end
+
 -- ── Config Changes ──────────────────────────────────────────────────
 
 function onConfigChanged()
@@ -602,8 +695,13 @@ if currentFileExists(existing) then
   existing = moveCurrentToPersistentStorage(existing)
   noctalia.state.set("wallhaven_auto_current", existing)
   saveCurrent(existing)
-  noctalia.setWallpaper(existing.file_path)
-  logDbg("restored wallpaper from " .. existing.file_path)
+  applyWallpaper(existing.file_path, existing.id, function(applied)
+    if applied then
+      logDbg("restored wallpaper from " .. existing.file_path)
+    else
+      logDbg("failed to restore wallpaper from " .. existing.file_path)
+    end
+  end)
   if enabled then
     local intervalMin = tonumber(noctalia.getConfig("interval_minutes")) or 30
     nextAtMs = noctalia.nowMs() + intervalMin * 60 * 1000

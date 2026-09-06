@@ -21,6 +21,10 @@ Automatically rotates your desktop wallpaper using the [Wallhaven](https://wallh
 | `tang/wallhaven-auto:wallhaven-auto` | Widget | Bar widget with countdown; click to rotate |
 | `tang/wallhaven-auto:toggle` | Shortcut | Control-center tile to toggle auto-rotation |
 
+## Requirements
+
+- `ln` — creates a lightweight, unique temporary wallpaper source link so Noctalia reloads the fixed-name cache file
+
 ## Settings
 
 | Setting | Type | Default | Description |
@@ -49,6 +53,7 @@ Automatically rotates your desktop wallpaper using the [Wallhaven](https://wallh
 6. Errors are notified once per day to avoid spam.
 7. The current wallpaper metadata (including its Wallhaven ID) is persisted and the wallpaper is re-applied when the service starts.
 8. Stale and interrupted-download files are removed so the wallpaper cache contains only the current image at rest.
+9. A lightweight unique symlink is created under `$XDG_RUNTIME_DIR` (or `/tmp` as a fallback) when applying the fixed cache path, forcing Noctalia to reload replaced image data without duplicating the image.
 
 ## NSFW Access
 

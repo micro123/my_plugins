@@ -6,11 +6,11 @@
 
 id = "tang/wallhaven-auto"
 name = "Wallhaven Auto-Rotate"
-version = "1.0.1"
+version = "1.0.2"
 plugin_api = 14
 author = "tang"
 license = "MIT"
-dependencies = []
+dependencies = ["ln"]
 tags = ["wallpaper", "service", "bar"]
 icon = "photo"
 description = "Auto-rotating wallpaper from Wallhaven. Configurable tags, categories, purity, resolution, and aspect ratio."
