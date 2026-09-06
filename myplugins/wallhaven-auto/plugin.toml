@@ -6,7 +6,7 @@
 
 id = "tang/wallhaven-auto"
 name = "Wallhaven Auto-Rotate"
-version = "1.0.0"
+version = "1.0.1"
 plugin_api = 14
 author = "tang"
 license = "MIT"

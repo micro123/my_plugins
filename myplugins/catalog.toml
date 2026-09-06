@@ -5,7 +5,7 @@
 [[plugin]]
 id = "tang/wallhaven-auto"
 name = "Wallhaven Auto-Rotate"
-version = "1.0.0"
+version = "1.0.1"
 author = "tang"
 license = "MIT"
 icon = "photo"

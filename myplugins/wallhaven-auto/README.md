@@ -5,6 +5,8 @@ Automatically rotates your desktop wallpaper using the [Wallhaven](https://wallh
 ## Features
 
 - **Automatic rotation** — configurable interval (min 15 minutes)
+- **Restart persistence** — restores the last wallpaper after Noctalia restarts, even when automatic rotation is disabled
+- **Bounded storage** — keeps a single cached image named `wallpaper.<ext>` instead of accumulating files
 - **Manual trigger** — click the bar widget for an instant wallpaper change
 - **Tag-based search** — maintain a list of tags; one is randomly chosen each rotation
 - **Content filters** — toggle categories (General/Anime/People) and purity (SFW/Sketchy/NSFW) via switch settings
@@ -42,9 +44,11 @@ Automatically rotates your desktop wallpaper using the [Wallhaven](https://wallh
 1. The service ticks every second, checking if the interval has elapsed.
 2. On rotation, it shuffles your tag list and tries up to 3 random tags.
 3. It searches Wallhaven with `sorting=random`, your filters, and the selected tag.
-4. The first result is downloaded to a temp directory and applied via `noctalia.setWallpaper()`.
+4. The first result is downloaded to the plugin data directory and atomically promoted to `wallpaper.<ext>` before being applied via `noctalia.setWallpaper()`.
 5. If all tags return empty, it falls back to an unfiltered search.
 6. Errors are notified once per day to avoid spam.
+7. The current wallpaper metadata (including its Wallhaven ID) is persisted and the wallpaper is re-applied when the service starts.
+8. Stale and interrupted-download files are removed so the wallpaper cache contains only the current image at rest.
 
 ## NSFW Access
 

@@ -4,7 +4,6 @@
 -- result (with dedup against recently used IDs), and applies it to all displays.
 
 local API_BASE = "https://wallhaven.cc/api/v1"
-local TEMP_DIR_NAME = "wallhaven-auto"
 local CHECK_INTERVAL_MS = 1000
 local MAX_RETRY_TAGS = 3
 local MAX_RECENT_IDS = 50
@@ -68,15 +67,13 @@ local function httpHeaders()
   return headers
 end
 
-local function tempDir()
-  local cache = noctalia.getenv("XDG_CACHE_HOME")
-  if type(cache) == "string" and cache ~= "" then
-    return cache .. "/" .. TEMP_DIR_NAME
+local function wallpaperDir()
+  local dir = noctalia.pluginDataDir()
+  if type(dir) == "string" and dir ~= "" then
+    return dir .. "/wallpapers"
   end
-  return "/tmp/" .. TEMP_DIR_NAME
+  return nil
 end
-
-local lastWallpaperPath = ""
 
 -- ── Recently-Used Wallpaper Dedup ────────────────────────────────────
 
@@ -95,6 +92,12 @@ local function enabledFilePath()
   return dir .. "/enabled.json"
 end
 
+local function currentFilePath()
+  local dir = noctalia.pluginDataDir()
+  if type(dir) ~= "string" then return nil end
+  return dir .. "/current.json"
+end
+
 local function loadEnabled()
   local path = enabledFilePath()
   if not path then return end
@@ -111,6 +114,107 @@ local function saveEnabled()
   if not encoded or not noctalia.writeFile(path, encoded) then
     logDbg("failed to persist enabled state")
   end
+end
+
+local function loadCurrent()
+  local path = currentFilePath()
+  if not path then return nil end
+  local content = noctalia.readFile(path)
+  if type(content) ~= "string" then return nil end
+  local decoded = noctalia.json.decode(content)
+  if type(decoded) ~= "table" then return nil end
+  return decoded
+end
+
+local function saveCurrent(current)
+  local path = currentFilePath()
+  if not path then return end
+  local encoded = noctalia.json.encode(current)
+  if not encoded or not noctalia.writeFile(path, encoded) then
+    logDbg("failed to persist current wallpaper")
+  end
+end
+
+local function currentFileExists(current)
+  return type(current) == "table"
+    and type(current.file_path) == "string"
+    and current.file_path ~= ""
+    and noctalia.fileExists(current.file_path)
+end
+
+local function wallpaperExtension(current)
+  local ext = tostring(current.file_ext or current.file_path:match("%.([a-zA-Z0-9]+)$") or "jpg")
+    :lower():gsub("[^a-z0-9]", "")
+  if ext == "" then return "jpg" end
+  return ext
+end
+
+local function cleanupWallpaperDir(keepPath)
+  local dir = wallpaperDir()
+  if not dir then return end
+  local entries = noctalia.listDir(dir)
+  if type(entries) ~= "table" then return end
+
+  for _, name in ipairs(entries) do
+    local path = dir .. "/" .. name
+    if path ~= keepPath then
+      local info = noctalia.fileInfo(path)
+      if info and not info.isDir then noctalia.removeFile(path) end
+    end
+  end
+end
+
+local function moveCurrentToPersistentStorage(current)
+  if not currentFileExists(current) then return nil end
+
+  local dir = wallpaperDir()
+  if not dir then return current end
+  if not noctalia.mkdirAll(dir) then return current end
+
+  local ext = wallpaperExtension(current)
+  local destination = dir .. "/wallpaper." .. ext
+  if current.file_path == destination then
+    cleanupWallpaperDir(destination)
+    return current
+  end
+
+  noctalia.removeFile(destination)
+  local moved = noctalia.renameFile(current.file_path, destination)
+  if not moved then
+    -- renameFile can fail when /tmp and the data directory are on different
+    -- filesystems. Luau strings are binary-safe, so fall back to copying.
+    local bytes = noctalia.readFile(current.file_path)
+    if type(bytes) ~= "string" or not noctalia.writeFile(destination, bytes) then
+      logDbg("failed to migrate wallpaper from " .. current.file_path)
+      return current
+    end
+    noctalia.removeFile(current.file_path)
+  end
+
+  current.file_path = destination
+  current.file_ext = ext
+  saveCurrent(current)
+  cleanupWallpaperDir(destination)
+  logDbg("migrated wallpaper to " .. destination)
+  return current
+end
+
+local function promoteDownload(stagingPath, destination)
+  local backupPath = destination .. ".previous"
+  local hadPrevious = noctalia.fileExists(destination)
+
+  noctalia.removeFile(backupPath)
+  if hadPrevious and not noctalia.renameFile(destination, backupPath) then
+    return false
+  end
+
+  if not noctalia.renameFile(stagingPath, destination) then
+    if hadPrevious then noctalia.renameFile(backupPath, destination) end
+    return false
+  end
+
+  if hadPrevious then noctalia.removeFile(backupPath) end
+  return true
 end
 
 local function loadRecentIds()
@@ -228,11 +332,6 @@ local function completeAndRelease(tag, wallpaper, dest, ext, generation)
   rotationStartedMs = 0
   consecutiveFailures = 0
 
-  -- Clean up old wallpaper file
-  if lastWallpaperPath ~= "" and lastWallpaperPath ~= dest then
-    noctalia.removeFile(lastWallpaperPath)
-  end
-  lastWallpaperPath = dest
   markRecent(wallpaper and wallpaper.id or "unknown")
   local intervalMin = tonumber(noctalia.getConfig("interval_minutes")) or 30
   nextAtMs = noctalia.nowMs() + intervalMin * 60 * 1000
@@ -242,14 +341,17 @@ local function completeAndRelease(tag, wallpaper, dest, ext, generation)
   local wId = (wallpaper and wallpaper.id) and tostring(wallpaper.id) or ""
   local wRes = (wallpaper and wallpaper.resolution) and tostring(wallpaper.resolution) or ""
   local wPurity = (wallpaper and wallpaper.purity) and tostring(wallpaper.purity) or ""
-  noctalia.state.set("wallhaven_auto_current", {
+  local current = {
     id = wId,
     resolution = wRes,
     purity = wPurity,
     tag = tag or "",
     file_path = dest,
     file_ext = ext,
-  })
+  }
+  noctalia.state.set("wallhaven_auto_current", current)
+  saveCurrent(current)
+  cleanupWallpaperDir(dest)
 
   -- Build notification with wallpaper info
   local bodyParts = {}
@@ -282,28 +384,44 @@ local function rotate(customTag)
     end
 
     local ext = (wallpaper.file_type == "image/png") and "png" or "jpg"
-    local wId = tostring(wallpaper.id or "unknown")
-    local dest = tempDir() .. "/wallhaven-" .. wId .. "." .. ext
+    local targetDir = wallpaperDir()
+    if not targetDir then
+      failAndRelease("Persistent plugin data directory is unavailable", generation)
+      return
+    end
+    local dest = targetDir .. "/wallpaper." .. ext
+    local stagingPath = targetDir .. "/wallpaper.download-" .. tostring(generation) .. "." .. ext
 
-    logDbg("downloadAndApply: downloading " .. dest .. " from " .. imageUrl:sub(1, 80) .. "...")
+    logDbg("downloadAndApply: downloading " .. stagingPath .. " from " .. imageUrl:sub(1, 80) .. "...")
     publishStatus("downloading", tag)
 
-    local dirOk = noctalia.mkdirAll(tempDir())
+    local dirOk = noctalia.mkdirAll(targetDir)
     if not dirOk then
       logDbg("downloadAndApply: mkdir failed")
-      failAndRelease("Failed to create temp directory", generation)
+      failAndRelease("Failed to create persistent wallpaper directory", generation)
       return
     end
 
-    local started = noctalia.download(imageUrl, dest, function(ok)
-      if not rotationIsCurrent(generation) then return end
+    noctalia.removeFile(stagingPath)
+    local started = noctalia.download(imageUrl, stagingPath, function(ok)
+      if not rotationIsCurrent(generation) then
+        noctalia.removeFile(stagingPath)
+        return
+      end
       if not ok then
+        noctalia.removeFile(stagingPath)
         logDbg("downloadAndApply: download failed")
         failAndRelease("Download failed", generation)
         return
       end
 
-      logDbg("downloadAndApply: download ok, applying")
+      if not promoteDownload(stagingPath, dest) then
+        noctalia.removeFile(stagingPath)
+        failAndRelease("Failed to replace cached wallpaper", generation)
+        return
+      end
+
+      logDbg("downloadAndApply: download promoted to " .. dest .. ", applying")
       publishStatus("applying", tag)
       noctalia.setWallpaper(dest)
       completeAndRelease(tag, wallpaper, dest, ext, generation)
@@ -472,15 +590,26 @@ loadRecentIds()
 loadEnabled()
 noctalia.state.set("wallhaven_auto_enabled", enabled)
 
--- Only rotate immediately on first-ever load; skip if state + file both intact
+-- Runtime state is not preserved across shell restarts, so fall back to the
+-- persisted metadata and re-apply the last wallpaper even when auto-rotation
+-- is disabled.
 local existing = noctalia.state.get("wallhaven_auto_current")
-local hasState = type(existing) == "table" and type(existing.id) == "string" and existing.id ~= ""
-local fileOk = hasState and type(existing.file_path) == "string"
-  and existing.file_path ~= "" and noctalia.fileExists(existing.file_path)
-if hasState and fileOk then
-  lastWallpaperPath = existing.file_path
-  local intervalMin = tonumber(noctalia.getConfig("interval_minutes")) or 30
-  nextAtMs = noctalia.nowMs() + intervalMin * 60 * 1000
+if not currentFileExists(existing) then
+  existing = loadCurrent()
+end
+
+if currentFileExists(existing) then
+  existing = moveCurrentToPersistentStorage(existing)
+  noctalia.state.set("wallhaven_auto_current", existing)
+  saveCurrent(existing)
+  noctalia.setWallpaper(existing.file_path)
+  logDbg("restored wallpaper from " .. existing.file_path)
+  if enabled then
+    local intervalMin = tonumber(noctalia.getConfig("interval_minutes")) or 30
+    nextAtMs = noctalia.nowMs() + intervalMin * 60 * 1000
+  else
+    nextAtMs = 0
+  end
   publishStatus("idle", nil, nil)
 else
   nextAtMs = 0
